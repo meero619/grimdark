@@ -276,6 +276,7 @@ void init() {
   g_screens.register_screen(screens::make_delete_character());
   g_screens.register_screen(screens::make_options());
   g_screens.register_screen(screens::make_difficulty_select());
+  g_screens.register_screen(screens::make_game_mode_select());
   g_screens.register_screen(screens::make_in_game());
   g_screens.register_screen(screens::make_message_box());
   g_screens.register_screen(screens::make_pause_menu());
