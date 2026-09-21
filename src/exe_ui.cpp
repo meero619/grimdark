@@ -1257,10 +1257,13 @@ OptionsScreen options_screen() {
     else if (c.is_button() && c.is_toggle() && c.caption().empty()) o.tabs.push_back(c);
   }
   if (!o.panel) return o;
+  WidgetA page_candidate;
   for (WidgetA c : o.panel.children()) {
     if (c.vtable_rva() == rva::kOptionsPageVt && c.active() && !o.page) o.page = c;
     else if (c.is_button()) o.buttons.push_back(c);
+    else if (c.active() && !page_candidate && !c.children().empty()) page_candidate = c;
   }
+  if (!o.page) o.page = page_candidate;
   if (o.page) for (WidgetA c : o.page.children()) if (c.is_button() && !c.is_toggle() && !c.caption().empty()) o.buttons.push_back(c);  // "Default" lives in the page
   return o;
 }

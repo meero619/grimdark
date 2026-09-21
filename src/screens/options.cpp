@@ -25,7 +25,7 @@ constexpr float kSliderStep = 0.05f, kSliderLargeStep = 0.2f;
 class OptionsMenuScreen : public Screen {
  public:
   std::string_view key() const override { return "options"; }
-  bool is_active() override { return exe_ui::available() && (bool)exe_ui::options_screen() && !exe_ui::popup(); }
+  bool is_active() override { return exe_ui::available() && (bool)exe_ui::options_screen(); }
   std::string screen_name() const override { return std::string(strings::kOptionsScreen); }
   // Above the in-game screen (0): from the pause menu the options live over the world, not in a menu state.
   int layer() const override { return 20; }
@@ -54,17 +54,31 @@ class OptionsMenuScreen : public Screen {
     std::vector<WidgetA> kids = o.page.children();
     std::string pending_label;  // the TEXT that labels the next value control
     int n = 0;
+    auto next_id = [&] { return std::format("options.page{}.{}", o.tab_index(), n++); };
+    auto flush_pending_text = [&] {
+      if (pending_label.empty()) return;
+      add_text(b, next_id(), pending_label);
+      pending_label.clear();
+    };
     for (WidgetA c : kids) {
       if (!c.active()) continue;
-      if (c.is_text()) { pending_label = textcap::speakable(c.text()); continue; }
-      std::string id = std::format("options.page{}.{}", o.tab_index(), n++);
-      if (c.is_button() && c.is_toggle()) add_checkbox(b, id, c);
-      else if (c.is_slider()) add_slider(b, id, pending_label, c);
-      else if (c.is_combo()) add_combo(b, id, pending_label, c);
-      else if (c.is_list()) add_list(b, id, c);
-      else continue;
-      pending_label.clear();
+      if (c.is_text()) {
+        std::string text = textcap::speakable(c.text());
+        if (!text.empty()) {
+          if (!pending_label.empty()) pending_label += " ";
+          pending_label += text;
+        }
+        continue;
+      }
+      if (c.is_button() && c.is_toggle()) { flush_pending_text(); add_checkbox(b, next_id(), c); }
+      else if (c.is_slider()) { add_slider(b, next_id(), pending_label, c); pending_label.clear(); }
+      else if (c.is_combo()) { add_combo(b, next_id(), pending_label, c); pending_label.clear(); }
+      else if (c.is_edit()) { add_edit(b, next_id(), pending_label, c); pending_label.clear(); }
+      else if (c.is_button()) { flush_pending_text(); b.add_item(ControlId::structural(next_id()), widget_button(c)); }
+      else if (c.is_list()) { flush_pending_text(); add_list(b, next_id(), c); }
+      else flush_pending_text();
     }
+    flush_pending_text();
     b.begin_stop("buttons");
     b.start_row("buttons");
     int k = 0;
@@ -124,6 +138,24 @@ class OptionsMenuScreen : public Screen {
       m.fragment(i >= 0 && i < (int)items.size() ? textcap::speakable(items[(size_t)i]) : std::string(strings::kEmpty));
       gd::strings::push_position(m, i + 1, (int)items.size());
       return m.build();
+    };
+    b.add_item(ControlId::structural(id), v);
+  }
+  static void add_text(GraphBuilder& b, const std::string& id, std::string text) {
+    auto v = std::make_shared<NodeVtable>();
+    v->control_type = &kRowType;
+    v->announcements = {NodeAnnouncement([text] { return text; }, false, announcement_kinds::kValue)};
+    b.add_item(ControlId::structural(id), v);
+  }
+  static void add_edit(GraphBuilder& b, const std::string& id, std::string label, WidgetA c) {
+    std::string value = textcap::speakable(c.text());
+    auto v = std::make_shared<NodeVtable>();
+    v->control_type = &kEditType;
+    v->announcements = {NodeAnnouncement([label] { return label; }, false, announcement_kinds::kLabel),
+                        NodeAnnouncement([value] { return value.empty() ? std::string(strings::kEmpty) : value; }, true, announcement_kinds::kValue)};
+    v->state_text = [c] {
+      std::string value = textcap::speakable(c.text());
+      return value.empty() ? std::string(strings::kEmpty) : value;
     };
     b.add_item(ControlId::structural(id), v);
   }
