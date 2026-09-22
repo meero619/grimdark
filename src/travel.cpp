@@ -27,12 +27,21 @@ unsigned owner = 0;
 world::Vec3 planned{};
 std::string last_status = "No travel in progress";
 bool map_request = false;
+bool test_background = false;
+world::Vec3 last_position{};
+double last_motion = 0, last_life = 0;
 std::vector<unsigned> old_portals;
 path::Point point(world::Vec3 p) { return {p.x, p.y, p.z}; }
 world::Vec3 vec(path::Point p) { return {p.x, p.y, p.z}; }
 void say(const std::string& s) { last_status = s; log::write("travel: " + s); speech::speak(s, true); }
 bool in_game() { auto* s = app::screens().current(); return s && s->key() == "in_game"; }
-bool foreground() { HWND game = FindWindowA("Grim Dawn", nullptr); return game && GetForegroundWindow() == game; }
+bool foreground() { HWND game = FindWindowA("Grim Dawn", nullptr); return game && (test_background || GetForegroundWindow() == game); }
+bool arrived(world::Vec3 me, float radius) {
+  float d = path::distance(point(me), point(target.pos));
+  if (d >= radius || std::abs(me.y - target.pos.y) >= 3) return false;
+  if (d < 0.2f) return true;
+  return world::free_distance_ray((target.pos.x-me.x)/d, (target.pos.z-me.z)/d, 0, d, nullptr) >= d - 0.2f;
+}
 bool manual() {
   const auto& ks = hooks::key_source();
   // A fresh Enter/J may start combat; carry-over Enter from a destination picker is ignored while arming.
@@ -74,9 +83,14 @@ void town_picker() {
 }
 }
 bool active() { return mode != Mode::Idle; }
+bool background_test(bool on) {
+  wchar_t v[4]{};
+  if (on && !(GetEnvironmentVariableW(L"GRIMDARK_NOFOCUS",v,4) && v[0] == L'1')) return false;
+  test_background = on; return true;
+}
 std::string status() { return last_status + "\n" + std::format("active={} corners={} next={} target={}\n", active(), route.size(), corner, target.id); }
 void stop(const std::string& reason) {
-  bool walking = mode == Mode::Walking;
+  bool walking = mode == Mode::Walking || mode == Mode::PortalMap;
   bool was_active = active() || map_request;
   mode = Mode::Idle; map_request = false; route.clear();
   if (walking && world::player_id() == owner) world::stop_movement();
@@ -157,9 +171,9 @@ void tick() {
     world::Vec3 me;
     if (!world::player_position(me)) { stop("Position unavailable"); return; }
     if (target.id && !world::entity_position(target.id, target.pos)) { stop("Target lost"); return; }
-    if (path::distance(point(me), point(target.pos)) < (target.enemy ? 2.4f : 1.4f)) { stop("Already near " + target.label); return; }
+    if (arrived(me, target.enemy ? 2.4f : 1.4f)) { stop("Already near " + target.label); return; }
     if (!plan(me)) { stop("No complete walkable route to " + target.label + ". A door, blocked exit, or unloaded area may be in the way."); return; }
-    mode = Mode::Walking; last_report = now;
+    mode = Mode::Walking; last_report = now; last_position = me; last_motion = now; last_life = world::life();
     say("Walking to " + target.label + ". Press a movement key to stop.");
   }
   if (manual()) { stop("Travel stopped: manual control"); return; }
@@ -182,13 +196,17 @@ void tick() {
   if (!in_game()) { stop("Travel stopped: menu or conversation opened"); return; }
   world::Vec3 me;
   if (!world::player_position(me)) { stop("Travel stopped: position unavailable"); return; }
+  if (!target.enemy && world::life() < last_life - 0.5) { stop("Travel stopped: you are taking damage"); return; }
+  last_life = world::life();
+  if (path::distance(point(me), point(last_position)) > 0.3f) { last_position = me; last_motion = now; }
+  if (now - last_motion > 4) { stop("Travel blocked: unable to move"); return; }
   if (target.id) {
     if (!world::entity_position(target.id, target.pos)) { stop("Target lost: " + target.label); return; }
     if (target.enemy) { float hp; int level, cls; if (!world::enemy_vitals(target.id,hp,level,cls) || hp <= 0) { stop("Target is no longer alive"); return; } }
   }
   float d = path::distance(point(me), point(target.pos));
   const float arrival = target.enemy ? 2.4f : 1.4f;
-  if (d < arrival && std::abs(me.y - target.pos.y) < 3.0f) { stop("Arrived near " + target.label + (target.id ? ". Press J to interact or attack." : ". Use N to select an entrance or person if needed.")); return; }
+  if (arrived(me, arrival)) { stop("Arrived near " + target.label + (target.id ? ". Press J to interact or attack." : ". Use N to select an entrance or person if needed.")); return; }
   if (target.id && path::distance(point(planned), point(target.pos)) > 2 && now - last_plan > 0.8) {
     if (!plan(me)) { stop("The target moved beyond a reachable route"); return; }
   }

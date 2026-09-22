@@ -12,4 +12,5 @@ void open_map();
 void return_to_town();
 std::string status();
 bool active();
+bool background_test(bool on); // dev only; requires GRIMDARK_NOFOCUS=1 at launch
 }

@@ -198,6 +198,7 @@ static std::string handle(const std::string& path, const std::map<std::string, s
   }
   if (path == "/buttons") return hooks::button_query_stats();
   if (path == "/travel") {
+    if (q.count("background") && !travel::background_test(q.at("background") == "1")) return "requires GRIMDARK_NOFOCUS=1\n";
     if (q.count("stop")) travel::stop();
     return travel::status();
   }
