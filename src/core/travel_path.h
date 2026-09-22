@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <queue>
+#include <limits>
 
 namespace gd::core::travel_path {
 struct Point { float x = 0, y = 0, z = 0; };
@@ -37,4 +39,28 @@ class Progress {
   double last_ = 0;
   float best_ = 0;
 };
+inline std::vector<size_t> shortest_route(const std::vector<Point>& nodes,
+    const std::vector<std::vector<size_t>>& edges, size_t start, const std::vector<bool>& goals) {
+  if (start >= nodes.size() || edges.size() != nodes.size() || goals.size() != nodes.size()) return {};
+  using Entry = std::pair<float,size_t>;
+  std::priority_queue<Entry,std::vector<Entry>,std::greater<Entry>> queue;
+  std::vector<float> costs(nodes.size(),std::numeric_limits<float>::infinity());
+  std::vector<size_t> previous(nodes.size(),nodes.size());
+  costs[start]=0; queue.push({0,start});
+  while (!queue.empty()) {
+    auto [cost,n]=queue.top(); queue.pop();
+    if (cost != costs[n]) continue;
+    if (goals[n]) {
+      std::vector<size_t> result;
+      for (size_t k=n;k!=nodes.size();k=previous[k]) result.push_back(k);
+      std::reverse(result.begin(),result.end()); return result;
+    }
+    for (size_t next:edges[n]) {
+      if (next>=nodes.size() || !finite(nodes[next])) continue;
+      float value=cost+std::max(0.01f,distance(nodes[n],nodes[next]));
+      if (value<costs[next]) { costs[next]=value; previous[next]=n; queue.push({value,next}); }
+    }
+  }
+  return {};
+}
 }

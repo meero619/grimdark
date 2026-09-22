@@ -25,3 +25,11 @@ TEST_CASE("Travel lookahead never passes the next corner") {
   p = toward({0,0,0},{0,0,1},1.5f);
   CHECK(p.z == doctest::Approx(1));
 }
+TEST_CASE("Regional travel follows connections and refuses disconnected destinations") {
+  std::vector<Point> nodes{{0,0,0},{0,0,5},{5,0,5},{5,0,0},{100,0,100}};
+  std::vector<std::vector<size_t>> edges{{1},{0,2},{1,3},{2},{}};
+  auto route=shortest_route(nodes,edges,0,{false,false,false,true,false});
+  CHECK(route==std::vector<size_t>{0,1,2,3});
+  CHECK(shortest_route(nodes,edges,0,{false,false,false,false,true}).empty());
+  CHECK(shortest_route(nodes,edges,0,{true,false,false,false,false})==std::vector<size_t>{0});
+}

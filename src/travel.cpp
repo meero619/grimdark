@@ -10,6 +10,7 @@
 #include "gameapi.h"
 #include "hooks.h"
 #include "log.h"
+#include "rooms.h"
 #include "screens/list_picker.h"
 #include "speech.h"
 
@@ -27,10 +28,14 @@ unsigned owner = 0;
 world::Vec3 planned{};
 std::string last_status = "No travel in progress";
 bool map_request = false;
+bool quest_request = false;
 bool test_background = false;
 world::Vec3 last_position{};
 double last_motion = 0, last_life = 0;
 std::vector<unsigned> old_portals;
+std::vector<world::Vec3> itinerary;
+size_t leg = 0;
+std::string selected_quest_area;
 path::Point point(world::Vec3 p) { return {p.x, p.y, p.z}; }
 world::Vec3 vec(path::Point p) { return {p.x, p.y, p.z}; }
 void say(const std::string& s) { last_status = s; log::write("travel: " + s); speech::speak(s, true); }
@@ -91,18 +96,49 @@ bool background_test(bool on) {
 std::string status() { return last_status + "\n" + std::format("active={} corners={} next={} target={}\n", active(), route.size(), corner, target.id); }
 void stop(const std::string& reason) {
   bool walking = mode == Mode::Walking || mode == Mode::PortalMap;
-  bool was_active = active() || map_request;
-  mode = Mode::Idle; map_request = false; route.clear();
+  bool was_active = active() || map_request || quest_request;
+  mode = Mode::Idle; map_request = false; quest_request = false; route.clear();
   if (walking && world::player_id() == owner) world::stop_movement();
   if (was_active && !reason.empty()) say(reason);
 }
 void start(world::TravelTarget selected) {
   stop("");
+  itinerary.clear(); leg=0;
   if (!world::in_world() || !path::finite(point(selected.pos))) { say("No destination available"); return; }
   target = std::move(selected); owner = world::player_id();
   if (target.id) world::lock_target(target.id); else world::lock_point(target.pos);
   mode = Mode::Arming; deadline = app::now() + 15;
   say("Preparing to walk to " + target.label);
+}
+void named_place(const std::string& area) {
+  auto legs=rooms::travel_route(area);
+  if (legs.empty()) { say("No connected room route to " + area + " is known"); return; }
+  world::TravelTarget t; t.label=area; t.pos=legs.front();
+  start(std::move(t));
+  itinerary=std::move(legs); selected_quest_area=area; leg=0;
+  world::set_follow_target(0,itinerary.back(),area);
+}
+void quest_places() {
+  std::vector<screens::PickerItem> rows;
+  std::vector<std::string> places;
+  for (const auto& q:gameapi::quests(gameapi::kQuestsInProgress)) {
+    for (const auto& task:q.tasks) {
+      if (task.state!=2) continue;
+      std::string objectives;
+      for (const auto& ob:task.objectives) if (!ob.done()) objectives += ob.text + " ";
+      auto names=rooms::places_in_text(objectives);
+      if (names.empty()) names=rooms::places_in_text(task.description);
+      for (const auto& name:names) {
+        if (std::find(places.begin(),places.end(),name)!=places.end()) continue;
+        places.push_back(name);
+        rows.push_back({static_cast<unsigned>(places.size()),name,q.name});
+      }
+    }
+  }
+  if (rows.empty()) { say("No named place could be resolved from your active quest. Choose a map marker or a nearby exit."); return; }
+  screens::open_picker("Active quest destinations",std::move(rows),[places](unsigned id) {
+    if (id && id<=places.size()) named_place(places[id-1]);
+  });
 }
 void reviewed() {
   if (active()) { stop(); return; }
@@ -111,6 +147,9 @@ void reviewed() {
   start(std::move(t));
 }
 void followed() {
+  if (!selected_quest_area.empty() && world::follow_target_label()==selected_quest_area) {
+    std::string area=selected_quest_area; named_place(area); return;
+  }
   world::TravelTarget t;
   if (!world::followed_destination(t)) { say("Choose a destination from the map first"); return; }
   start(std::move(t));
@@ -129,18 +168,25 @@ void open_menu() {
   stop();
   screens::open_picker("Travel", {
     {1,"Walk to selected tracker target","Control semicolon"},
-    {2,"Quest and map destinations","Choose a marker; Backspace walks there"},
+    {6,"Active quest destinations","Walk through successive room exits"},
+    {2,"Map destinations","Choose a marker; Backspace walks there"},
     {3,"Walk to followed map destination","Control apostrophe"},
     {4,"Return to town or unlocked riftgate","Control Shift L"},
     {5,"Stop travel",""}
   }, [](unsigned id) {
-    if (id == 1) reviewed(); else if (id == 2) open_map(); else if (id == 3) followed();
+    if (id == 1) reviewed(); else if (id == 6) { quest_request=true; deadline=app::now()+15; }
+    else if (id == 2) open_map(); else if (id == 3) followed();
     else if (id == 4) return_to_town(); else stop();
   });
 }
 void tick() {
-  if (!active() && !map_request) return;
+  if (!active() && !map_request && !quest_request) return;
   const double now = app::now();
+  if (quest_request) {
+    if (now > deadline || hooks::key_source().just_pressed(0x01)) { stop("Quest selection cancelled"); return; }
+    if (in_game()) { quest_request=false; quest_places(); }
+    return;
+  }
   if (map_request) {
     if (now > deadline) { stop("Map opening cancelled"); return; }
     if (hooks::key_source().just_pressed(0x01)) { stop("Map opening cancelled"); return; }
@@ -206,7 +252,14 @@ void tick() {
   }
   float d = path::distance(point(me), point(target.pos));
   const float arrival = target.enemy ? 2.4f : 1.4f;
-  if (arrived(me, arrival)) { stop("Arrived near " + target.label + (target.id ? ". Press J to interact or attack." : ". Use N to select an entrance or person if needed.")); return; }
+  if (arrived(me, arrival) || (!itinerary.empty() && corner+1==route.size() && path::distance(point(me),route.back())<0.9f)) {
+    if (leg+1<itinerary.size()) {
+      target.pos=itinerary[++leg]; world::lock_point(target.pos);
+      if (!plan(me)) { stop("Route to " + target.label + " is blocked at the next room. Check nearby doors with N; Control apostrophe retries the journey."); return; }
+    } else {
+      stop("Arrived near " + target.label + (target.id ? ". Press J to interact or attack." : ". Use Control M for the entrance marker, or N for nearby entrances.")); return;
+    }
+  }
   if (target.id && path::distance(point(planned), point(target.pos)) > 2 && now - last_plan > 0.8) {
     if (!plan(me)) { stop("The target moved beyond a reachable route"); return; }
   }

@@ -5,6 +5,8 @@
 // tools/rooms.py (segmentation) and the authoring workflow (titles, descriptions, sub-regions); the mod only
 // looks up: the player's world position -> the region's label grid -> a room.
 #include <string>
+#include <vector>
+#include "world.h"
 
 namespace gd::rooms {
 void init();                 // opens assets/rooms.db next to the DLL (missing = the feature stays silent)
@@ -23,4 +25,8 @@ void set_dwell_ms(int ms);        // wait before a change within the settle wind
 void set_settle_ms(int ms);       // time in a room after which any change is announced immediately
 void set_say_untitled(bool on);   // untitled rooms are announced as "room N" (default on until authored)
 std::string status();        // dev: /room
+// Only the caller's active quest text is matched against authored place names. The route uses room
+// adjacency for long distances; each resulting short leg must still pass the game's live pathfinder.
+std::vector<std::string> places_in_text(const std::string& text);
+std::vector<world::Vec3> travel_route(const std::string& area);
 }  // namespace gd::rooms

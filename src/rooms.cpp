@@ -9,6 +9,8 @@
 #include "world.h"
 #include "core/message_builder.h"
 #include "core/rooms_model.h"
+#include "core/travel_path.h"
+#include <cctype>
 #include "core/strings.h"
 #include <windows.h>
 #include <algorithm>
@@ -228,6 +230,57 @@ Region* region_for_player() {
 std::vector<world::ScanItem> exit_items();   // below
 void init() { open_db(); world::set_exit_provider(exit_items); }
 void shutdown() { g_regions.clear(); g_current = nullptr; g_db.reset(); }
+std::vector<std::string> places_in_text(const std::string& text) {
+  std::vector<std::string> out;
+  if (!g_db) return out;
+  auto lower=[](std::string s) { for (char& c:s) c=(char)std::tolower((unsigned char)c); return s; };
+  std::string hay=lower(text);
+  db::Stmt st(*g_db,"SELECT DISTINCT area_name FROM rooms WHERE area_name IS NOT NULL AND status!='orphan'");
+  while (st.step()) {
+    std::string name=st.text(0), needle=lower(name);
+    if (needle.size()<5) continue;
+    size_t p=hay.find(needle);
+    if (p!=std::string::npos && (p==0 || !std::isalnum((unsigned char)hay[p-1])) &&
+        (p+needle.size()==hay.size() || !std::isalnum((unsigned char)hay[p+needle.size()]))) out.push_back(name);
+  }
+  std::sort(out.begin(),out.end());
+  return out;
+}
+std::vector<world::Vec3> travel_route(const std::string& area) {
+  std::vector<world::Vec3> out;
+  world::Vec3 me;
+  if (!g_db || !g_current || !world::player_position(me)) return out;
+  int label=g_current->grid.label_at(me.x,me.z,me.y,kLookupRing);
+  if (label<0 || (size_t)label>=g_current->rooms.size()) return out;
+  std::string start_key=g_current->rooms[(size_t)label].key;
+  std::vector<core::travel_path::Point> points;
+  std::vector<std::string> regions;
+  std::vector<bool> goals;
+  std::map<std::string,size_t> ids;
+  db::Stmt nodes(*g_db,"SELECT key,region_key,anchor_x,anchor_z,area_name FROM rooms WHERE status!='orphan'");
+  while (nodes.step()) {
+    ids[nodes.text(0)]=points.size();
+    regions.push_back(nodes.text(1));
+    points.push_back({(float)nodes.real(2),me.y,(float)nodes.real(3)});
+    goals.push_back(nodes.text(4)==area);
+  }
+  auto start=ids.find(start_key);
+  if (start==ids.end()) return out;
+  std::vector<std::vector<size_t>> edges(points.size());
+  db::Stmt links(*g_db,"SELECT room_a,room_b FROM exits");
+  while (links.step()) {
+    auto a=ids.find(links.text(0)), b=ids.find(links.text(1));
+    if (a!=ids.end() && b!=ids.end()) { edges[a->second].push_back(b->second); edges[b->second].push_back(a->second); }
+  }
+  auto path=core::travel_path::shortest_route(points,edges,start->second,goals);
+  for (size_t i=path.size()>1?1:0;i<path.size();++i) {
+    size_t n=path[i]; auto p=points[n];
+    Region* r=load_region(regions[n]); double y=me.y;
+    if (r) r->grid.floor_y_at(p.x,p.z,me.y,y);
+    out.push_back({p.x,(float)y,p.z});
+  }
+  return out;
+}
 void reset() { g_hyst.reset(); g_announced_region.clear(); g_announced_subregion.clear(); g_current = nullptr; }
 void set_dwell_ms(int ms) { g_hyst.dwell_ms = ms; }
 void set_settle_ms(int ms) { g_hyst.settle_ms = ms; }

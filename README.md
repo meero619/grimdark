@@ -153,6 +153,12 @@ Something will be done about this eventually.
 
 F1 -> Travel opens the travel menu. Ctrl+Shift+semicolon opens it directly.
 
+- **Active quest destinations** lists place names mentioned in the current stages of your active quests.
+  Choose **Burial Hill** for Waking to Misery. Travel follows the room connections toward that area,
+  checking each short leg against the live game. It stops for damage or blocked passages. **Ctrl+apostrophe**
+  retries the selected journey from your new position. On reaching the area, use Ctrl+M to select the cave
+  entrance or N to find it nearby. The destination list does not expose unrelated undiscovered locations.
+
 - Select an enemy, NPC, item or exit with the existing tracker, then press **Ctrl+semicolon** to walk to it.
   Press the same shortcut again to stop. Enemies remain live targets as they move; travel stops near them
   so you can attack with J. It does not attack or choose the next enemy automatically.
@@ -171,7 +177,7 @@ Walking uses the game's path corridor and ordinary movement commands. A destinat
 loaded route is refused rather than approached blindly. Closed doors, disconnected dungeon entrances and
 unloaded areas may require selecting an intermediate exit or interacting with a door, then choosing the
 destination again. Arrival at an entrance does not enter the dungeon: press J. This is an initial travel
-implementation; automatic multi-area routing and automatic combat are not included.
+implementation; crossing dungeon entrances and automatic combat are not included.
 
 WARNING: The game's own bindings must stay at their defaults. The mod remaps them using mod-specific mechanisms.  If you
 move them, bad things happen.  What bad things? It depends, don't go find out.
