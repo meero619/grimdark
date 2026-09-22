@@ -1,0 +1,41 @@
+GRIMDARK TRAVEL GUIDE
+
+Start the game with your usual Grimdark launcher.
+
+GET TO BURIAL HILL
+1. Once in the world, press F1.
+2. Choose Travel, then Active quest destinations.
+3. Choose Burial Hill and press Enter. Walking starts automatically.
+4. At the arrival announcement, press Control+M. Choose Burial Hill Entrance and press Backspace to walk toward it.
+5. If enemies hurt you, travel stops. Handle the fight, then press Control+apostrophe to retry your destination.
+6. At the cave, N selects nearby neutral objects and entrances. Select Cave Entrance and press J to enter.
+
+WALK TO A TRACKER TARGET
+Use the existing tracker to select an enemy, NPC, item or entrance, then press Control+semicolon.
+The word "distant" does not prevent walking. The target still needs a connected route loaded by the game.
+Moving enemies are followed until you are close enough to take over. Press J to attack or interact.
+The helper does not attack or select another enemy automatically.
+
+RETURN TO TOWN
+Press Control+Shift+L. Wait for the destination list, choose Devil's Crossing, and press Enter.
+This uses your personal rift and the game's unlocked riftgates. It cannot bypass areas that prohibit rifts.
+
+STOP OR RESUME
+F8 stops. W, A, S or D also stops and gives you manual movement.
+Control+apostrophe retries your selected map or quest destination.
+Control+semicolon starts walking to your current tracker target, or stops if travel is already running.
+Control+Shift+semicolon opens the Travel menu directly.
+Pausing, changing focus, opening another screen, harmful ground or a blocked route stops travel.
+Travel never resumes by itself.
+
+LIMITS
+Only your existing tracker, map markers and places named by active quests are offered.
+The helper does not reveal unexplored enemies or automatically enter dungeons.
+If a route is blocked, select and interact with a nearby door or entrance, then retry.
+Regional progress announcements currently give distance to the next route point, not the whole journey.
+
+TESTED SEPTEMBER 22, 2026
+The full route to Burial Hill and returning from there to Devil's Crossing worked in live tests.
+Walking toward a tracker enemy announced as distant also worked; combat was left under player control.
+Your character was left in Devil's Crossing with full health. The game is closed and normal display settings restored.
+Your own listening test with NVDA is still needed.
