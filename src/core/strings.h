@@ -26,6 +26,7 @@ inline constexpr std::string_view kHeading = "heading";
 inline constexpr std::string_view kSelected = "selected";
 inline constexpr std::string_view kDisabled = "disabled";
 inline constexpr std::string_view kHit = "hit";       // incoming hit announcements (Zira, per attack that reaches you) and brief outgoing
+inline constexpr std::string_view kYouDied = "You died";
 inline constexpr std::string_view kMiss = "miss";     // brief outgoing: the game's Miss and Dodge
 inline constexpr std::string_view kBlockedHit = "blocked";   // brief outgoing: the game's Block
 inline constexpr std::string_view kOutgoingModes[3] = {"off", "brief", "full"};

@@ -23,6 +23,7 @@ std::string region_name();
 std::string area_name();   // the minimap's area name (Engine::GetAreaNameTag localized), "Lower Crossing"; empty when unknown
 bool object_is_note(const void* obj);   // is-a ItemNote (any Object, bag items included)
 double life();                   // current life (0 when unknown)
+bool player_alive();             // Character::IsAlive (false when the player/export is unknown)
 float life_max();
 float energy();                  // "mana" in the exports, "energy" in the UI
 float energy_max();

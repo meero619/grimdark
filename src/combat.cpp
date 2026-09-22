@@ -84,6 +84,10 @@ std::atomic<uint64_t> g_hits_total{0};
 unsigned (*g_get_object_id)(const void*) = nullptr;
 gd::core::CombatCoalescer g_coalescer;
 gd::core::ThresholdWatcher g_health(0.10);
+enum class PlayerLifeState { Unknown, Alive, Dead };
+PlayerLifeState g_player_life = PlayerLifeState::Unknown;
+unsigned g_life_player_id = 0;
+std::atomic<uint64_t> g_deaths{0};
 std::deque<std::string> g_recent;        // last parsed lines, for /combat
 std::mutex g_recent_mu;
 
@@ -229,7 +233,7 @@ bool install() {
              GD_HOOK(PlayStats_IncrementKills, IncrKills_hook), GD_HOOK(CombatManager_TakeAttack, TakeAttack_hook)};
   return gd::hooks::attach_hooks(g_hooks) == 0;
 }
-void remove() { gd::hooks::detach_hooks(g_hooks); g_pending.clear(); g_pending_debuff.clear(); g_exp_pending = 0; g_kill_count = 0; g_last_xp = -1; }
+void remove() { gd::hooks::detach_hooks(g_hooks); g_pending.clear(); g_pending_debuff.clear(); g_exp_pending = 0; g_kill_count = 0; g_last_xp = -1; g_player_life = PlayerLifeState::Unknown; g_life_player_id = 0; }
 
 // pan/gain of a world point from the player: the shared rule for the positioned voices.
 static void positioned(const world::Vec3& p, float& pan, float& gain) {
@@ -240,7 +244,7 @@ static void positioned(const world::Vec3& p, float& pan, float& gain) {
 }
 
 void tick() {
-  if (!world::in_world()) { g_health.reset(); g_pending.clear(); g_pending_debuff.clear(); g_coalescer.clear(); g_exp_pending = 0; g_kill_count = 0; g_last_xp = -1; return; }
+  if (!world::in_world()) { g_health.reset(); g_pending.clear(); g_pending_debuff.clear(); g_coalescer.clear(); g_exp_pending = 0; g_kill_count = 0; g_last_xp = -1; g_player_life = PlayerLifeState::Unknown; g_life_player_id = 0; return; }
   double now = app::now();
   while (!g_pending.empty()) {
     RawEvent r = std::move(g_pending.front()); g_pending.pop_front();
@@ -282,8 +286,26 @@ void tick() {
     else if (g_outgoing == 1) { std::string b = brief_line(o); if (!b.empty()) voice::say({voice::Which::Mark, b, o.pan, o.gain, voice::Policy::Overlap, voice::kGroupEnemy, stagger()}); }
   }
   if (g_incoming) for (voice::Say& s : zira) { s.predelay_ms = stagger(); voice::say(std::move(s)); }
+  // IsAlive is authoritative for a death.  A player id and a positive life cap gate the read so a
+  // loading frame (or an unresolved player) cannot turn its default zero into a false death.
   float mx = world::life_max();
-  if (mx > 0) {
+  unsigned life_player_id = world::player_id();
+  if (!life_player_id || mx <= 0.0f) {
+    g_player_life = PlayerLifeState::Unknown;
+    g_life_player_id = 0;
+  } else {
+    if (life_player_id != g_life_player_id) {
+      g_life_player_id = life_player_id;
+      g_player_life = PlayerLifeState::Unknown;
+    }
+    PlayerLifeState next = world::player_alive() ? PlayerLifeState::Alive : PlayerLifeState::Dead;
+    if (g_player_life == PlayerLifeState::Alive && next == PlayerLifeState::Dead) {
+      ++g_deaths;
+      speech::speak(strings::kYouDied, true);
+    }
+    g_player_life = next;
+  }
+  if (life_player_id && mx > 0) {
     int pct = 0;
     if (g_health.update(world::life() / mx, pct)) {
       MessageBuilder m;
@@ -328,8 +350,9 @@ void speak_vitals() {
 }
 
 std::string status() {
-  std::string out = std::format("events_seen={} parsed={} spoken={} unreadable={} pending={} debuffs={} kills={} exp_total={} exp_pending={} coalesce={} window={:.3f} merged={} dropped={} health_bucket={}\n",
-                                g_seen.load(), g_parsed.load(), g_spoken.load(), g_bad.load(), g_pending.size(), g_debuffs.load(), g_kills_total.load(), g_exp_total.load(), g_exp_pending.load(), g_coalescer.enabled(), g_coalescer.window(),
+  const char* life_state = g_player_life == PlayerLifeState::Alive ? "alive" : g_player_life == PlayerLifeState::Dead ? "dead" : "unknown";
+  std::string out = std::format("events_seen={} parsed={} spoken={} unreadable={} pending={} debuffs={} deaths={} player={} kills={} exp_total={} exp_pending={} coalesce={} window={:.3f} merged={} dropped={} health_bucket={}\n",
+                                g_seen.load(), g_parsed.load(), g_spoken.load(), g_bad.load(), g_pending.size(), g_debuffs.load(), g_deaths.load(), life_state, g_kills_total.load(), g_exp_total.load(), g_exp_pending.load(), g_coalescer.enabled(), g_coalescer.window(),
                                 g_coalescer.merged(), g_coalescer.dropped(), g_health.bucket());
   std::lock_guard lk(g_recent_mu);
   for (const std::string& l : g_recent) out += "  " + l + "\n";

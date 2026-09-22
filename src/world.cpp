@@ -660,6 +660,7 @@ std::string region_name() {
   return s ? std::string(s->view()) : std::string();
 }
 double life() { void* p = player(); return p && g_api.GetCurrentLife ? g_api.GetCurrentLife(p) : 0.0; }
+bool player_alive() { void* p = player(); return p && g_api.Character_IsAlive && g_api.Character_IsAlive(p); }
 float life_max() { void* p = player(); return p && g_api.GetLifeLimit ? g_api.GetLifeLimit(p) : 0.0f; }
 float energy() { void* p = player(); return p && g_api.GetCurrentMana ? g_api.GetCurrentMana(p) : 0.0f; }
 float energy_max() { void* p = player(); return p && g_api.GetManaLimit ? g_api.GetManaLimit(p) : 0.0f; }

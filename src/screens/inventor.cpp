@@ -83,7 +83,7 @@ class InventorScreen : public WindowScreen {
     for (int i = 0; i < (int)tabs.size(); ++i) {
       if (!tabs[(size_t)i].present) continue;
       exe_tabs_.push_back(i);
-      labels.push_back(game_text(tabs[(size_t)i].label.c_str(), std::format("tab {}", i + 1)));
+      labels.push_back(game_text(tabs[(size_t)i].label.c_str(), tab_label(i)));
       values.push_back(tabs[(size_t)i].enabled ? std::string() : std::string(strings::kNotLearned));
     }
     // The game's tab is the truth (a real click on a tab changes it too).
@@ -147,7 +147,16 @@ class InventorScreen : public WindowScreen {
   }
   static std::string game_text(const char* tag, std::string fallback) {
     std::string t = tag ? textcap::speakable(hooks::localize(tag)) : std::string();
-    return t.empty() ? fallback : t;
+    return t.empty() || t.starts_with("Tag not found:") ? fallback : t;
+  }
+  static std::string tab_label(int tab) {
+    switch (tab) {
+      case 0: return "Salvage";
+      case 1: return "Dismantle";
+      case 2: return "Convert";
+      case 3: return "Reroll";
+      default: return std::format("tab {}", tab + 1);
+    }
   }
   void invalidate() { rows_.invalidate(); }
   // The chamber's accept test, per tab (the exe's box filters exe+0x1af8c0 / exe+0x1afe90 + the drop's quality gate):
