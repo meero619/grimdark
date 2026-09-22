@@ -11,6 +11,7 @@
 // every call happens on the game thread; no widget pointer is held across frames (resolve each frame).
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace gd::exe_ui {
@@ -200,6 +201,18 @@ bool inventor_take(int which);
 enum class InventorAction { KeepItem, KeepAddon, RemoveAugment, Dismantle };
 bool inventor_press(InventorAction a);
 std::string inventor_dump();
+// Illusionist: native equipment boxes, all appearance pages, and staged previews.
+struct IllusionistState {
+  bool open = false, can_apply = false;
+  unsigned equipment = 0, appearance = 0;
+  std::vector<unsigned> equipment_ids, appearance_ids;
+  std::vector<std::pair<unsigned, unsigned>> pending;
+  std::string cost, money;
+};
+IllusionistState illusionist_state();
+bool illusionist_select(unsigned id, bool appearance);
+bool illusionist_apply(const IllusionistState& expected);
+std::string illusionist_dump();
 // ---- the riftgate travel map (docs/exe-ui-layout.md "Riftgate travel"): the world map in riftgate mode ----
 struct Riftgate {
   std::string name;      // the zone's localized name ("Devil's Crossing")

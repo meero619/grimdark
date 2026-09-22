@@ -66,6 +66,8 @@ constexpr size_t kDialog_Text = 0x00, kDialog_Party = 0x60, kDialog_Type = 0x64;
 // Code bytes at sites the layout depends on (from the unpacked image, 2026-08-22).
 struct Signature { uintptr_t rva; const char* what; const char* bytes; };
 const Signature kSignatures[] = {
+  {0x281640, "Illusionist selection", "\x88\x54\x24\x10\x55\x53\x56\x57\x41\x54"},
+  {0x2823e0, "Illusionist appearance pages", "\x48\x8b\xc4\x57\x41\x54\x41\x55\x41\x56"},
   {0xc324c, "node->DisplayWidget thunk", "\x48\x83\xe9\x08\xe9"},
   {0xa30a0, "tree HandleMouseEvent", "\x48\x89\x5c\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xec\x20\x80"},
   {0xbb2c0, "App::RequestState", "\x40\x53\x48\x83\xec\x20\x8d\x42\xfa\x89\x91\x58"},
@@ -1502,5 +1504,84 @@ bool activate_ptr(uintptr_t p) {
   WidgetA w{(void*)p};
   if (!find_in_tree(root(), w.p)) { log::writef("exe_ui: {:#x} is not in the current tree", p); return false; }
   return w.activate();
+}
+namespace {
+char* illusionist_window() {
+  WindowB w = ingame_window(ingame::kTransmuter);
+  return w && w.visible() && vtable_rva_of(w.p) == 0x31da48 ? (char*)w.p : nullptr;
+}
+size_t illusionist_span(const void* begin, const void* end, size_t stride, size_t max) {
+  uintptr_t b = (uintptr_t)begin, e = (uintptr_t)end;
+  return b && e >= b && (e - b) % stride == 0 && (e - b) / stride <= max ? (e - b) / stride : 0;
+}
+unsigned illusionist_box_id(void* box) {
+  if (!box) return 0;
+  __try {
+    void* item = ((void* (*)(void*))(*(void***)box)[0xa0 / 8])(box);
+    return item ? *(unsigned*)((char*)item + 0x30) : 0;
+  } __except (EXCEPTION_EXECUTE_HANDLER) { return 0; }
+}
+bool illusionist_refresh(char* w) {
+  // Native slot/appearance selection handler, exe+0x28069d / +0x280713.
+  __try { ((void (*)(void*, bool))(g_base + 0x281640))(w, true); return true; }
+  __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
+}
+}
+IllusionistState illusionist_state() {
+  IllusionistState s;
+  char* w = illusionist_window();
+  if (!w) return s;
+  s.open = true;
+  s.equipment = rd_or<unsigned>(w, 0x108, 0);
+  s.appearance = rd_or<unsigned>(w, 0x114, 0);
+  char* boxes = (char*)rdp(w, 0xa50);
+  size_t n = illusionist_span(boxes, rdp(w, 0xa58), 8, 32);
+  for (size_t i = 0; i < n; ++i) {
+    unsigned id = illusionist_box_id(rdp(boxes, i * 8));
+    if (id) s.equipment_ids.push_back(id);
+  }
+  // vector<vector<unsigned>> (24-byte pages), used by native page refresh +0x2823e0.
+  char* pages = (char*)rdp(w, 0x998);
+  n = illusionist_span(pages, rdp(w, 0x9a0), 24, 512);
+  for (size_t p = 0; p < n; ++p) {
+    char* ids = (char*)rdp(pages, p * 24);
+    size_t count = illusionist_span(ids, rdp(pages, p * 24 + 8), 4, 1024);
+    for (size_t i = 0; i < count; ++i) {
+      unsigned id = rd_or<unsigned>(ids, i * 4, 0);
+      if (id && std::find(s.appearance_ids.begin(), s.appearance_ids.end(), id) == s.appearance_ids.end()) s.appearance_ids.push_back(id);
+    }
+  }
+  // Native pending-preview map: sentinel +0x9c8; nodes have equipment id +0x10,
+  // appearance object +0x18. Read only, never modify its container.
+  void* head = rdp(w, 0x9c8);
+  void* node = rdp(head, 0);
+  for (size_t i = 0; node && node != head && i < 32; ++i) {
+    s.pending.emplace_back(rd_or<unsigned>(node, 0x10, 0), rd_or<unsigned>(rdp(node, 0x18), 0x30, 0));
+    node = rdp(node, 0);
+  }
+  s.cost = WidgetB{w + 0x1940}.text();
+  s.money = WidgetB{w + 0x1848}.text();
+  s.can_apply = !s.pending.empty() && WidgetB{w + 0x598}.enabled();
+  return s;
+}
+bool illusionist_select(unsigned id, bool appearance) {
+  IllusionistState s = illusionist_state();
+  const auto& ids = appearance ? s.appearance_ids : s.equipment_ids;
+  if (!s.open || !id || std::find(ids.begin(), ids.end(), id) == ids.end()) return false;
+  char* w = illusionist_window();
+  return w && write_int(w, appearance ? 0x114 : 0x108, (int)id) && illusionist_refresh(w);
+}
+bool illusionist_apply(const IllusionistState& expected) {
+  IllusionistState s = illusionist_state();
+  if (!s.open || !s.can_apply || s.pending != expected.pending || s.cost != expected.cost || s.money != expected.money) return false;
+  char* w = illusionist_window();
+  return w && WidgetB{w + 0x598}.press(w + 0x948);
+}
+std::string illusionist_dump() {
+  auto s = illusionist_state();
+  std::string out = std::format("open={} equipment={} appearance={} cost='{}' money='{}' can_apply={} pending={}\n", s.open, s.equipment, s.appearance, s.cost, s.money, s.can_apply, s.pending.size());
+  for (unsigned id : s.equipment_ids) out += std::format("equipment {} '{}'\n", id, gameapi::item_name(gameapi::object_by_id(id)));
+  for (unsigned id : s.appearance_ids) out += std::format("appearance {} '{}'\n", id, gameapi::item_name(gameapi::object_by_id(id)));
+  return out;
 }
 }  // namespace gd::exe_ui

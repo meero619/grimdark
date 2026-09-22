@@ -467,4 +467,16 @@ gd::core::MessageBuilder& push_faction(gd::core::MessageBuilder& m, std::string_
 
 inline constexpr std::string_view kUnsupportedGameVersion = "this game version is not supported by Grimdark; menus will not be read";
 
+inline constexpr std::string_view kIllusionist = "Illusionist";
+inline constexpr std::string_view kIllusionHint = "Enter chooses equipment or previews an appearance. Tab moves between equipment, appearances, and cost. Apply Illusion commits all previews. Escape closes without applying.";
+inline constexpr std::string_view kIllusionEmptySlots = "No eligible equipment.";
+inline constexpr std::string_view kIllusionEmptyLooks = "No appearances available for this equipment.";
+inline constexpr std::string_view kIllusionPreview = "Preview selected";
+inline constexpr std::string_view kIllusionFailed = "The selection changed or is unavailable. Review it again.";
+inline constexpr std::string_view kIllusionApply = "Apply Illusion";
+inline constexpr std::string_view kIllusionCancel = "Cancel";
+inline constexpr std::string_view kIllusionCost = "Total cost in iron bits";
+inline constexpr std::string_view kIllusionMoney = "Available iron bits";
+inline constexpr std::string_view kIllusionConfirm = "Confirm applying all previewed illusions";
+inline constexpr std::string_view kIllusionRequested = "Apply requested";
 }  // namespace gd::strings

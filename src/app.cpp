@@ -17,6 +17,7 @@
 #include "screens/loot_filter.h"
 #include "screens/crafting.h"
 #include "screens/inventor.h"
+#include "screens/illusionist.h"
 #include "screens/difficulty_select.h"
 #include "screens/in_game.h"
 #include "screens/loading.h"
@@ -296,6 +297,7 @@ void init() {
   g_screens.register_screen(screens::make_loot_filter());
   g_screens.register_screen(screens::make_crafting());
   g_screens.register_screen(screens::make_inventor());
+  g_screens.register_screen(screens::make_illusionist());
   g_screens.register_screen(screens::make_riftgate());
   g_screens.register_screen(screens::make_map_markers());
   g_screens.register_screen(screens::make_inventory());

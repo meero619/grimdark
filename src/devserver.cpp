@@ -433,6 +433,7 @@ static std::string handle(const std::string& path, const std::map<std::string, s
   if (path == "/quests") { if (q.count("complete")) return gameapi::complete_quest_task((void*)strtoull(q.at("complete").c_str(), nullptr, 0), parse_int(q.count("task") ? q.at("task") : "0", 0)) ? "ok\n" : "failed\n"; if (q.count("track")) return gameapi::set_quest_tracked((void*)strtoull(q.at("track").c_str(), nullptr, 0), !q.count("off")) ? "ok\n" : "failed\n"; return gameapi::dump_quests(parse_int(q.count("filter") ? q.at("filter") : "0", 0)); }
   if (path == "/objectives") { std::string out; for (const std::string& l : gameapi::objectives()) out += l + "\n"; return out.empty() ? "no objectives\n" : out; }
   if (path == "/factions") return gameapi::dump_factions();
+  if (path == "/illusionist") return exe_ui::illusionist_dump();
   if (path == "/hotbar") {   // ?assign=<slot index>&skill=<id> | ?primary=<id> | ?secondary=<id> | ?activate=<index> | ?tip=<index> | ?base=&stride= (quickbar layout knob)
     if (q.count("base")) screens::set_quickbar_base((unsigned)parse_int(q.at("base"), 0), (unsigned)parse_int(q.count("stride") ? q.at("stride") : "10", 10));
     if (q.count("assign")) return gameapi::assign_skill_to_slot((unsigned)parse_int(q.at("assign"), 0), (unsigned)parse_int(q.count("skill") ? q.at("skill") : "0", 0)) ? "ok\n" : "failed\n";

@@ -312,6 +312,9 @@ hotbar manager and works against the locked target like any aimed skill.
 | Ctrl+N | Skills: one tab per mastery, then constellations |
 | Ctrl+Q | Codex |
 | Ctrl+J | Factions |
+| Illusionist: Tab / Shift+Tab | Move between equipment, appearances, and cost / Apply controls |
+| Illusionist: Up / Down, Enter | Browse rows; choose equipment or preview an appearance; Apply Illusion opens a confirmation with the total cost |
+| Illusionist: Space / Ctrl+Space, Escape | Read item details; close the Illusionist without applying previews |
 | Ctrl+L | Personal riftgate |
 | Ctrl+1..0, Ctrl+J, Ctrl+I | Inside inventory / skills: put the focused skill (or, on a weapon slot, the weapon's basic attack) on quickbar slot 1..10 / the left mouse / the right mouse |
 | Ctrl+O | Loot filter config |
