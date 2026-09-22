@@ -291,7 +291,15 @@ Popup popup() {
   auto in_layer = [](WidgetA layer) -> Popup {
     uintptr_t vt = layer.vtable_rva();
     if ((vt != rva::kPopupLayerVt && vt != rva::kConfirmLayerVt) || !layer.active()) return {};
-    for (WidgetA w : layer.children()) if (w.vtable_rva() == rva::kPopupWindowVt && w.active()) return {w};
+    for (WidgetA w : layer.children()) {
+      if (w.vtable_rva() != rva::kPopupWindowVt || !w.active()) continue;
+      // The Network page briefly creates an empty layer while probing UPnP. It is not a modal prompt and can
+      // disappear during the same update, so require the visible prompt payload rather than the layer alone.
+      bool has_text = false, has_button = false;
+      for (WidgetA t : w.texts()) if (t.active() && !t.text().empty()) { has_text = true; break; }
+      for (WidgetA b : w.buttons()) if (b.active() && !b.caption().empty()) { has_button = true; break; }
+      if (has_text && has_button) return {w};
+    }
     return {};
   };
   // Ordinary menu popups are root children. Options owns its confirmation layer beneath the screen object.

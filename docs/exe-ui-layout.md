@@ -123,7 +123,8 @@ Measured windows (1600x900 positions are the widgets' own, not needed by the mod
 - **Confirmation popups** (verified 2026-09-22): the Yes/No layer used by Download Cloud Saves, Delete Cloud
   Saves, and the Options discard question has vtable exe+0x30bc88 and is a child of the Options screen. Its
   child is the same framework-A popup window shape as the older root-level exe+0x30bd80 modal layer;
-  `popup()` checks both locations and accepts both layer types.
+  `popup()` checks both locations and accepts both layer types. The Network page briefly creates an empty
+  layer while probing UPnP, so a modal must also contain nonempty text and a captioned button.
 - Delete Character window (vtable exe+0x30b138): TEXT 'DELETE', TEXT prompt, EDIT, A1 Accept (enabled once the
   box reads DELETE), A1 Cancel; no hidden byte known -- open = `manager+0xf8 == window`.
 
