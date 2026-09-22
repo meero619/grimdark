@@ -288,10 +288,16 @@ std::vector<WidgetA> WidgetA::texts() const { std::vector<WidgetA> v; for (Widge
 std::vector<WidgetA> WidgetA::edits() const { std::vector<WidgetA> v; for (WidgetA c : children()) if (c.is_edit()) v.push_back(c); return v; }
 
 Popup popup() {
-  for (WidgetA layer : root().children()) {
+  auto in_layer = [](WidgetA layer) -> Popup {
     uintptr_t vt = layer.vtable_rva();
-    if ((vt != rva::kPopupLayerVt && vt != rva::kConfirmLayerVt) || !layer.active()) continue;
+    if ((vt != rva::kPopupLayerVt && vt != rva::kConfirmLayerVt) || !layer.active()) return {};
     for (WidgetA w : layer.children()) if (w.vtable_rva() == rva::kPopupWindowVt && w.active()) return {w};
+    return {};
+  };
+  // Ordinary menu popups are root children. Options owns its confirmation layer beneath the screen object.
+  for (WidgetA top : root().children()) {
+    if (Popup p = in_layer(top)) return p;
+    for (WidgetA layer : top.children()) if (Popup p = in_layer(layer)) return p;
   }
   return {};
 }
