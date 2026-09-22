@@ -467,7 +467,6 @@ gd::core::MessageBuilder& push_faction(gd::core::MessageBuilder& m, std::string_
 
 inline constexpr std::string_view kUnsupportedGameVersion = "this game version is not supported by Grimdark; menus will not be read";
 
-inline constexpr std::string_view kIllusionist = "Illusionist";
 inline constexpr std::string_view kIllusionHint = "Enter chooses equipment or previews an appearance. Tab moves between equipment, appearances, and cost. Apply Illusion commits all previews. Escape closes without applying.";
 inline constexpr std::string_view kIllusionEmptySlots = "No eligible equipment.";
 inline constexpr std::string_view kIllusionEmptyLooks = "No appearances available for this equipment.";
