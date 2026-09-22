@@ -11,6 +11,18 @@ class AchievementsScreen : public WindowScreen {
  public:
   AchievementsScreen() : WindowScreen("achievements", "Achievements", exe_ui::ingame::kAchievements, 13) {}
 
+  static bool compact_number(std::string_view text) {
+    // HUD health and energy use compact forms such as "3236/3316".  The
+    // achievement rail uses spaced forms ("0 / 17"), so this cannot hide it.
+    bool slash = false;
+    if (text.empty()) return false;
+    for (char c : text) {
+      if (c == '/') { if (slash) return false; slash = true; }
+      else if (c < '0' || c > '9') return false;
+    }
+    return slash;
+  }
+
   void build(GraphBuilder& b) override {
     // The window's category rail begins around x=619 and its achievement text
     // begins around x=901.  Ignore HUD text, then preserve the game's visual
@@ -22,7 +34,7 @@ class AchievementsScreen : public WindowScreen {
     std::unordered_set<std::string> seen;
     for (const textcap::Item& it : textcap::snapshot()) {
       std::string text = textcap::speakable(it.text);
-      if (text.empty() || it.y < 240 || !seen.insert(text).second) continue;
+      if (text.empty() || compact_number(text) || it.y < 240 || !seen.insert(text).second) continue;
       if (it.x >= 560 && it.x < 800 && it.y <= 800) {
         // The rail alternates category label and its "completed / total" line.
         if (text.find(" / ") != std::string::npos) category_counts.push_back(std::move(text));
