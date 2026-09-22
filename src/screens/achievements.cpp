@@ -22,8 +22,8 @@ class AchievementsScreen : public WindowScreen {
     std::unordered_set<std::string> seen;
     for (const textcap::Item& it : textcap::snapshot()) {
       std::string text = textcap::speakable(it.text);
-      if (text.empty() || it.y < 240 || it.y > 800 || !seen.insert(text).second) continue;
-      if (it.x >= 560 && it.x < 800) {
+      if (text.empty() || it.y < 240 || !seen.insert(text).second) continue;
+      if (it.x >= 560 && it.x < 800 && it.y <= 800) {
         // The rail alternates category label and its "completed / total" line.
         if (text.find(" / ") != std::string::npos) category_counts.push_back(std::move(text));
         else category_labels.push_back({std::move(text), it.x, it.y});
