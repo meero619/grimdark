@@ -231,7 +231,7 @@ void tick() {
     if (mode == Mode::Portal && now - last_probe > 0.4) {
       last_probe = now;
       for (const auto& it : world::scan(world::ScanGroup::Neutrals, 12)) {
-        if (it.cls.find("Teleporter") == std::string::npos) continue;
+        if (it.cls != "FixedItemTeleport" || it.record.find("riftgate_personal.dbr") == std::string::npos) continue;
         if (std::find(old_portals.begin(), old_portals.end(), it.id) != old_portals.end()) continue;
         world::lock_target(it.id); world::mouse_key(1,true); world::mouse_key(1,false);
         mode = Mode::PortalMap; deadline = now + 6; return;
