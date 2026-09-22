@@ -138,7 +138,15 @@ void tick() {
   if (mode == Mode::Arming || mode == Mode::TownArming) {
     if (now > deadline) { stop("Travel cancelled before starting"); return; }
     if (ks.just_pressed(0x01) || ks.just_pressed(0x11) || ks.just_pressed(0x1e) || ks.just_pressed(0x1f) || ks.just_pressed(0x20)) { stop(); return; }
-    if (!in_game() || world::game_paused() || !foreground()) return;
+    if (!in_game()) {
+      auto* s = app::screens().current();
+      // Only tolerate the closing frame of the menu/map that requested travel. Never leave a latent
+      // movement request waiting underneath an unrelated window or across a return to the main menu.
+      if (now > deadline - 14 || !s || (s->key() != "list_picker" && s->key() != "mapmarkers" && s->key() != "mod_menu"))
+        stop("Travel cancelled: another screen is open");
+      return;
+    }
+    if (world::game_paused() || !foreground()) { stop("Travel cancelled: game paused or focus changed"); return; }
     for (int k : {0x1c,0x24,0x17,0x11,0x1e,0x1f,0x20}) if (ks.held(k)) return;
     if (mode == Mode::TownArming) {
       old_portals.clear();
