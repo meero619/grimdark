@@ -883,4 +883,7 @@ minutes to 29 seconds without changing the touching-grid calculation.
 Two physical clusters were excluded: the existing water-only `coastroad_2`, and Fangs' frozen fortress whose three
 level bodies contain navigation tiles far outside their chunk footprints. The rest of Fangs has area-level speech and
 route geometry; its new rooms are currently announced as the game area plus a stable room number until authored room
-descriptions are added. CI compilation, installed database selection, and live Fangs traversal remain to be verified.
+descriptions are added. CI run 35721415427 passed 143 tests / 797 assertions and produced `ci-7970bf5`. The installed
+database SHA256 matched the artifact; a muted main-menu launch selected `map=gdx3`, opened `rooms_gdx3.db`, and mapped
+1294 game chunks. The test exited normally without loading a character. Live traversal inside Fangs remains to be
+verified when the character reaches that campaign.
