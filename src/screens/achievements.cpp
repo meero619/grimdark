@@ -15,14 +15,27 @@ class AchievementsScreen : public WindowScreen {
     // The window's category rail begins around x=619 and its achievement text
     // begins around x=901.  Ignore HUD text, then preserve the game's visual
     // reading order.  This is deliberately read-only.
-    std::vector<std::string> categories;
+    std::vector<std::string> category_labels;
+    std::vector<std::string> category_counts;
     std::vector<std::string> entries;
     std::unordered_set<std::string> seen;
     for (const textcap::Item& it : textcap::snapshot()) {
       std::string text = textcap::speakable(it.text);
-      if (text.empty() || it.x < 560 || it.y < 240 || !seen.insert(text).second) continue;
-      if (it.x < 820) categories.push_back(std::move(text));
-      else entries.push_back(std::move(text));
+      if (text.empty() || it.y < 240 || it.y > 800 || !seen.insert(text).second) continue;
+      if (it.x >= 560 && it.x < 800) {
+        // The rail alternates category label and its "completed / total" line.
+        if (text.find(" / ") != std::string::npos) category_counts.push_back(std::move(text));
+        else category_labels.push_back(std::move(text));
+      } else if (it.x >= 820 && it.x < 1500) {
+        // The quest tracker lives beyond the achievements pane at the far right.
+        entries.push_back(std::move(text));
+      }
+    }
+    std::vector<std::string> categories;
+    for (size_t i = 0; i < category_labels.size(); ++i) {
+      std::string label = category_labels[i];
+      if (i < category_counts.size()) label += ", " + category_counts[i];
+      categories.push_back(std::move(label));
     }
     b.begin_stop("categories");
     for (size_t i = 0; i < categories.size(); ++i)
