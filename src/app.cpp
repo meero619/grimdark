@@ -27,6 +27,7 @@
 #include "screens/tip.h"
 #include "screens/codex.h"
 #include "screens/factions.h"
+#include "screens/achievements.h"
 #include "screens/riftgate.h"
 #include "sonar.h"
 #include "screens/inventory.h"
@@ -291,6 +292,7 @@ void init() {
   g_screens.register_screen(screens::make_conversation());
   g_screens.register_screen(screens::make_codex());
   g_screens.register_screen(screens::make_factions());
+  g_screens.register_screen(screens::make_achievements());
   g_screens.register_screen(screens::make_loot_filter());
   g_screens.register_screen(screens::make_crafting());
   g_screens.register_screen(screens::make_inventor());
