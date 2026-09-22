@@ -105,8 +105,10 @@ CLAUDE.md "Traps and lessons"; the mechanism docs are `docs/*.md`.
   row's own rect so the step's quest actions run), `loading` (app state 10), `in_game` (InGameUI present).
   `screens/edit_field.h` (EditSession) is the shared typing-into-a-game-edit-box behaviour. `textcap` is now
   dev-only (`/text`) except the loading tip line. The navigator rerenders before rebaselining its live watch
-  after activate/adjust (values were being spoken twice). Key-binding REBINDING, the Options discard prompt on
-  Close (not seen yet), the Multiplayer/Network screens and the in-world windows (character, inventory,
+  after activate/adjust (values were being spoken twice). A 2026-09-22 Fangs pass added the second framework-A
+  confirmation layer used by Download Cloud Saves, Delete Cloud Saves, and discard-changes, removed duplicated
+  Network-page buttons from the bottom row, and labels the icon-only Steam Controller control from its rollover
+  description. Key-binding REBINDING, the Multiplayer screens and the in-world windows (character, inventory,
   skills, quests, journal -- framework B, offsets in docs/exe-ui-layout.md's InGameUI map) are not modelled.
 - In-world input, decided 2026-08-22 (explicitly deviating from wotr: the player is always embodied, perception
   and interaction are what the camera shows, the camera is the player's): **J = left mouse button, I = right,

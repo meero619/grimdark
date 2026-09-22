@@ -120,6 +120,9 @@ Measured windows (1600x900 positions are the widgets' own, not needed by the mod
   flag is `+0x228` (vtable `+0xd0` returns it); the host polls it, deletes the screen and hides itself. The
   host's Escape (exe+0x29f1c0) sets `+0x268` when the private Options differ from the live ones (the discard
   prompt) else `+0x228`.
+- **Confirmation popups** (verified 2026-09-22): the Yes/No layer used by Download Cloud Saves, Delete Cloud
+  Saves, and the Options discard question has vtable exe+0x30bc88. Its child is the same framework-A popup
+  window shape as the older exe+0x30bd80 modal layer; `popup()` accepts both.
 - Delete Character window (vtable exe+0x30b138): TEXT 'DELETE', TEXT prompt, EDIT, A1 Accept (enabled once the
   box reads DELETE), A1 Cancel; no hidden byte known -- open = `manager+0xf8 == window`.
 

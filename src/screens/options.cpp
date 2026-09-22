@@ -74,7 +74,14 @@ class OptionsMenuScreen : public Screen {
       else if (c.is_slider()) { add_slider(b, next_id(), pending_label, c); pending_label.clear(); }
       else if (c.is_combo()) { add_combo(b, next_id(), pending_label, c); pending_label.clear(); }
       else if (c.is_edit()) { add_edit(b, next_id(), pending_label, c); pending_label.clear(); }
-      else if (c.is_button()) { flush_pending_text(); b.add_item(ControlId::structural(next_id()), widget_button(c)); }
+      else if (c.is_button()) {
+        flush_pending_text();
+        // Some icon-only controls (the disabled Steam Controller configuration button, for example) have
+        // no caption but do have a localized rollover description. Give NVDA that text as the label.
+        std::string label = c.caption();
+        if (label.empty()) label = textcap::speakable(hooks::localize(c.tooltip_tag().c_str()));
+        b.add_item(ControlId::structural(next_id()), widget_button(c, label));
+      }
       else if (c.is_list()) { flush_pending_text(); add_list(b, next_id(), c); }
       else flush_pending_text();
     }

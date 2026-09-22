@@ -27,6 +27,7 @@ constexpr uintptr_t kListA = 0x30c530;          // key-binding table (ctor exe+0
 constexpr uintptr_t kOptionsScreenVt = 0x30cad0, kOptionsPanelVt = 0x30d650, kOptionsPageVt = 0x30cbb8;  // measured live 2026-08-22
 constexpr uintptr_t kConvWindowVt = 0x3157a8, kConvRowVt = 0x315710;  // ctors exe+0x16e9a0 / exe+0x16d9b0
 constexpr uintptr_t kPopupLayerVt = 0x30bd80;   // modal layer at the root holding a popup window (measured live: the name-exists box)
+constexpr uintptr_t kConfirmLayerVt = 0x30bc88; // Yes/No confirmation layer (cloud save operations, Options discard)
 constexpr uintptr_t kPopupWindowVt = 0x30d650;  // the popup window itself (text widgets + buttons)
 constexpr uintptr_t kButtonB = 0x313e78;        // framework B button vtable (ctor exe+0x124d60, size 0x388)
 constexpr uintptr_t kTextButtonB = 0x313ce8;    // framework B TextButton vtable (ctor exe+0x126fe0, size 0x3b0; caption +0x358)
@@ -288,7 +289,8 @@ std::vector<WidgetA> WidgetA::edits() const { std::vector<WidgetA> v; for (Widge
 
 Popup popup() {
   for (WidgetA layer : root().children()) {
-    if (layer.vtable_rva() != rva::kPopupLayerVt || !layer.active()) continue;
+    uintptr_t vt = layer.vtable_rva();
+    if ((vt != rva::kPopupLayerVt && vt != rva::kConfirmLayerVt) || !layer.active()) continue;
     for (WidgetA w : layer.children()) if (w.vtable_rva() == rva::kPopupWindowVt && w.active()) return {w};
   }
   return {};
@@ -1264,7 +1266,10 @@ OptionsScreen options_screen() {
     else if (c.active() && !page_candidate && !c.children().empty()) page_candidate = c;
   }
   if (!o.page) o.page = page_candidate;
-  if (o.page) for (WidgetA c : o.page.children()) if (c.is_button() && !c.is_toggle() && !c.caption().empty()) o.buttons.push_back(c);  // "Default" lives in the page
+  // "Default" is the first plain button in every page. Other pages (notably Network) also contain
+  // Help/Test/cloud-save buttons; those already belong to the page stop and must not be repeated in the
+  // bottom Apply/Default/Close row.
+  if (o.page) for (WidgetA c : o.page.children()) if (c.is_button() && !c.is_toggle() && !c.caption().empty()) { o.buttons.push_back(c); break; }
   return o;
 }
 int OptionsScreen::tab_index() const { return rd_or<int>(screen.p, kOpt_TabIndex, -1); }
