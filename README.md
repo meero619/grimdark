@@ -149,6 +149,30 @@ Something will be done about this eventually.
 
 ## Controls
 
+### Travel assistance (this fork)
+
+F1 -> Travel opens the travel menu. Ctrl+Shift+semicolon opens it directly.
+
+- Select an enemy, NPC, item or exit with the existing tracker, then press **Ctrl+semicolon** to walk to it.
+  Press the same shortcut again to stop. Enemies remain live targets as they move; travel stops near them
+  so you can attack with J. It does not attack or choose the next enemy automatically.
+- **Ctrl+M** opens the map. Find a destination such as Burial Hill Entrance and press **Backspace** to walk
+  there. Enter still selects a direction beacon; **Ctrl+apostrophe** walks to that selected beacon afterward.
+  Space on a map row explains these controls. Only markers supplied by the game and your existing tracker
+  are used. Travel does not reveal fog, discover distant enemies, unlock gates, or teleport the player.
+- **Ctrl+Shift+L** opens a personal rift and offers the game's unlocked riftgate destinations. Choose
+  Devil's Crossing or another unlocked destination with Enter. This uses normal rift travel; areas that
+  forbid personal rifts still forbid it. Escape leaves the normal rift map available.
+- **W/A/S/D**, Escape, an attack/interact key, or **Ctrl+Escape** stops automatic walking. Opening another
+  window, losing focus, pausing, dying, losing the target, harmful ground ahead, or getting stuck also stops
+  it with a spoken reason. Travel never resumes by itself after being stopped.
+
+Walking uses the game's path corridor and ordinary movement commands. A destination that has no complete
+loaded route is refused rather than approached blindly. Closed doors, disconnected dungeon entrances and
+unloaded areas may require selecting an intermediate exit or interacting with a door, then choosing the
+destination again. Arrival at an entrance does not enter the dungeon: press J. This is an initial travel
+implementation; automatic multi-area routing and automatic combat are not included.
+
 WARNING: The game's own bindings must stay at their defaults. The mod remaps them using mod-specific mechanisms.  If you
 move them, bad things happen.  What bad things? It depends, don't go find out.
 

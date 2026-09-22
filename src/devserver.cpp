@@ -5,6 +5,7 @@
 #include "speech.h"
 #include "textcap.h"
 #include "world.h"
+#include "travel.h"
 #include "notify.h"
 #include "quest_rewards.h"
 #include "exe_ui.h"
@@ -196,6 +197,10 @@ static std::string handle(const std::string& path, const std::map<std::string, s
     return "cursor override set\n";
   }
   if (path == "/buttons") return hooks::button_query_stats();
+  if (path == "/travel") {
+    if (q.count("stop")) travel::stop();
+    return travel::status();
+  }
   if (path == "/gui") return app::gui_dump();
   if (path == "/actions") return app::action_keys();
   if (path == "/action") { std::string k = q.count("key") ? q.at("key") : ""; if (!app::fire_action(k)) { status = 400; return "unknown action; see /actions\n"; } return "fired\n"; }

@@ -47,6 +47,7 @@
 #include "gameapi.h"
 #include "speech.h"
 #include "world.h"
+#include "travel.h"
 
 namespace gd::app {
 using namespace gd::core;
@@ -112,6 +113,11 @@ static void register_actions() {
   }
   // F1 = the mod's own menu, live everywhere (Global); tooltips stay on Space (2026-09-01, F1 used to double as tooltip).
   m.register_action("mod.menu", "Grimdark menu", InputCategory::Global, [] { screens::open_mod_menu(); }).bind(keys::F1);
+  m.register_action("travel.menu", "Travel menu", InputCategory::InGame, [] { travel::open_menu(); }).bind(0x27, true, true, false);
+  m.register_action("travel.reviewed", "Walk to selected target or stop", InputCategory::InGame, [] { travel::reviewed(); }).bind(0x27, true, false, false);
+  m.register_action("travel.followed", "Walk to followed destination", InputCategory::InGame, [] { travel::followed(); }).bind(0x28, true, false, false);
+  m.register_action("travel.town", "Return to town", InputCategory::InGame, [] { travel::return_to_town(); }).bind(0x26, true, true, false);
+  m.register_action("travel.stop", "Stop travel", InputCategory::Global, [] { travel::stop(); }).bind(keys::Escape, true, false, false);
   // Ctrl+Tab / Ctrl+Shift+Tab: the current screen's tabs (tab list across the top; the page is one column).
   m.register_action("ui.tabNext", "Next tab", InputCategory::UI, [] { Screen* s = g_screens.current(); if (s) s->switch_tab(1); }).bind(keys::Tab, true, false, false);
   m.register_action("ui.tabPrev", "Previous tab", InputCategory::UI, [] { Screen* s = g_screens.current(); if (s) s->switch_tab(-1); }).bind(keys::Tab, true, true, false);
@@ -322,6 +328,7 @@ void tick() {
   Screen* before = g_screens.current();
   bool raw = before && before->captures_raw_input();
   g_screens.tick();
+  travel::tick();
   // The screen stack decides who gets the keyboard; the hook is only touched when the decision changes so a
   // dev override (/gamekeys) holds until the next screen change.
   bool owns = g_screens.owns_keyboard();

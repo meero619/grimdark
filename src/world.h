@@ -130,6 +130,13 @@ std::string cycle_review(ScanGroup group, int dir, bool nearest = false);   // n
 // tier / a summoner's adds). Same readout and landing as cycle_review(Enemies).
 std::string cycle_highest_classification(int dir);
 unsigned reviewed_id();
+// Copy destinations already exposed by the review cursor/map. No wider discovery scan.
+struct TravelTarget { unsigned id = 0; Vec3 pos; std::string label; bool enemy = false; };
+bool reviewed_destination(TravelTarget& out);
+bool followed_destination(TravelTarget& out);
+bool movement_step(const Vec3& destination);
+void stop_movement();
+bool game_paused();
 // A devotion shrine (StaticShrine) that has been restored / cleansed (its state 6); false for a ruined or desecrated one.
 bool shrine_restored(unsigned id);
 

@@ -10,6 +10,7 @@
 #include "screens/sound_glossary.h"
 #include "screens/window_base.h"
 #include "world.h"
+#include "travel.h"
 
 namespace gd::screens {
 using namespace gd::core;
@@ -31,6 +32,7 @@ class ModMenuScreen : public Screen {
     b.begin_stop("page");
     b.add_item(ControlId::structural("mod.glossary"), row_item(std::string(strings::kSoundGlossary), {}, [] { g_open = false; open_sound_glossary(); }));
     if (world::in_world()) {   // the two in-world config overlays (T and Ctrl+T)
+      b.add_item(ControlId::structural("mod.travel"), row_item("Travel", {}, [] { g_open = false; travel::open_menu(); }));
       b.add_item(ControlId::structural("mod.announcements"), row_item(std::string(strings::kAnnouncements), {}, [] { g_open = false; open_announcements(); }));
       b.add_item(ControlId::structural("mod.cues"), row_item(std::string(strings::kCueSettings), {}, [] { g_open = false; open_cue_settings(); }));
     }

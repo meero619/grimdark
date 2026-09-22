@@ -262,6 +262,7 @@ struct Api {
   void* (*Engine_GetResourceLoader)(void*) = nullptr;          // the engine's async asset loader (textures, meshes, effects)
   bool (*ResourceLoader_IsIdle)(void*) = nullptr;              // zero-timeout wait on its work event: nothing queued
   bool (*IsGameTimePaused)() = nullptr;
+  void (*Character_StopMoving)(void*, bool, bool) = nullptr;
   void (*PauseGameTime)() = nullptr;
   void (*UnpauseGameTime)() = nullptr;
   int (*Region_GetNumPortals)(const void*) = nullptr;
@@ -388,6 +389,7 @@ void load_api() {
   LOAD(Engine_GetResourceLoader, Engine_GetResourceLoader);
   LOAD(ResourceLoader_IsIdle, ResourceLoader_IsIdle);
   LOAD(IsGameTimePaused, IsGameTimePaused);
+  g_api.Character_StopMoving = fn<decltype(g_api.Character_StopMoving)>("Game.dll", "?StopMoving@Character@GAME@@QEAAX_N0@Z");
   LOAD(PauseGameTime, PauseGameTime);
   LOAD(UnpauseGameTime, UnpauseGameTime);
   LOAD(Region_GetNumPortals, Region_GetNumPortals);
@@ -2175,6 +2177,7 @@ int clock_hour(const Vec3& p) {
 static std::vector<ScanItem> (*g_exit_provider)() = nullptr;
 void set_exit_provider(std::vector<ScanItem> (*provider)()) { g_exit_provider = provider; }
 static Vec3 g_reviewed_point;   // the position of a reviewed point item (set on landing)
+static std::string g_reviewed_label;
 
 // Enemy nameplate stats off a Monster* (health fraction, char level, MonsterClassification). SEH-guarded and
 // POD-only (no C++ objects) so it can wrap the raw game reads. The caller must have confirmed e is a Monster
@@ -2326,6 +2329,7 @@ static std::string land_on(std::vector<ScanItem>& items, ScanGroup group, int di
   idx = idx < 0 ? (dir >= 0 ? 0 : count - 1) : ((idx + dir) % count + count) % count;
   const ScanItem& it = items[(size_t)idx];
   g_reviewed_id = it.id;
+  g_reviewed_label = it.label.empty() ? it.cls : it.label;
   if (is_point_id(it.id)) { g_reviewed_point = it.pos; lock_point(it.pos); }
   else lock_target(it.id);
   ping_reviewed();  // every landing plays the route ping, like wotr
@@ -2571,6 +2575,40 @@ void set_follow_target(unsigned id, const Vec3& pos, const std::string& label) {
 void clear_follow_target() { g_follow_active = false; g_follow_id = 0; g_follow_label.clear(); }
 bool has_follow_target() { return g_follow_active; }
 std::string follow_target_label() { return g_follow_label; }
+
+bool reviewed_destination(TravelTarget& out) {
+  if (!g_reviewed_id) return false;
+  out = {}; out.label = g_reviewed_label;
+  if (is_point_id(g_reviewed_id)) { out.pos = g_reviewed_point; return true; }
+  out.id = g_reviewed_id;
+  out.enemy = is_foe(out.id);
+  return entity_position(out.id, out.pos);
+}
+bool followed_destination(TravelTarget& out) {
+  if (!g_follow_active) return false;
+  out = {}; out.label = g_follow_label; out.pos = g_follow_pos;
+  if (g_follow_id && !is_point_id(g_follow_id)) {
+    out.id = g_follow_id; out.enemy = is_foe(out.id);
+    if (!entity_position(out.id, out.pos)) return false;
+  }
+  return true;
+}
+bool game_paused() { return g_api.IsGameTimePaused && g_api.IsGameTimePaused(); }
+// Short world-space commands use the same controller entry point as WASD. The travel layer supplies
+// successive corners from the navmesh corridor; it never holds a synthetic key or changes movement mode.
+bool movement_step(const Vec3& destination) {
+  if (!g_controller || !HandleActionFromJoystick_hook_orig || !g_api.Character_StopMoving) return false;
+  Buf wv{};
+  if (!world_vec3_at(destination, wv.b)) return false;
+  __try { return HandleActionFromJoystick_hook_orig(g_controller, wv.b, false); }
+  __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
+}
+void stop_movement() {
+  void* p = player();
+  if (!p || !g_api.Character_StopMoving) return;
+  __try { g_api.Character_StopMoving(p, true, false); }
+  __except (EXCEPTION_EXECUTE_HANDLER) { log::write("travel: stop movement faulted"); }
+}
 
 std::string follow_ping() {
   if (!g_follow_active) return {};

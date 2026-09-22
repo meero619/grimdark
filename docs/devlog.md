@@ -856,3 +856,9 @@ CLAUDE.md "Traps and lessons"; the mechanism docs are `docs/*.md`.
   not a real address with a vtable in the game's images (`plausible_region`); `world_pos_of` runs GetWorldPosition
   under SEH and returns zero on a fault (logged). Not yet exercised live.
 
+
+## 2026-09-22: initial accessible travel in the player fork
+
+Added F1 Travel, Ctrl+semicolon selected-target travel, Ctrl+apostrophe followed-marker travel, map-row Backspace travel, Ctrl+Shift+L return-rift flow, and Ctrl+Escape stop. Uses the existing review/map destinations and NavManager corridor with short HandleActionFromJoystick commands. Character::StopMoving(bool,bool) export inspected in the installed Game.dll before adding the stop wrapper. No fog changes, enlarged scans, save edits, teleports, or automatic attacks. Stops on manual control, focus/pause changes, other windows, target loss/death, no complete corridor, harmful ground ahead, or lack of progress. Rift flow uses the game's personal-rift action and discovered destination list.
+
+Core tests cover invalid/partial/wrong-floor corridors, corner-limited steps, and progress along a detour. Runtime acceptance and CI results pending; do not treat source completion as a verified player feature. Uses a separate codex/accessible-travel fork branch and CI build, without changing upstream or the fork's main branch.

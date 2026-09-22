@@ -4,6 +4,7 @@
 #include "screens/shrine_list.h"
 #include "screens/window_base.h"
 #include "world.h"
+#include "travel.h"
 
 namespace gd::screens {
 using namespace gd::core;
@@ -61,6 +62,13 @@ class MapMarkersScreen : public WindowScreen {
                    m.fragment(strings::kFollowing).fragment(copy.label);
                    speech::speak(m.build(), true);
                    close();   // return to the world; ' now follows the picked marker
+                 }, [] { speech::speak("Enter sets a direction beacon. Backspace starts automatic walking. Movement keys stop travel.", true); }, [this, copy] {
+                   world::set_follow_target(copy.id, copy.pos, copy.label);
+                   close();
+                   world::TravelTarget t;
+                   t.id = world::is_point_id(copy.id) ? 0 : copy.id;
+                   t.pos = copy.pos; t.label = copy.label;
+                   travel::start(std::move(t));
                  }));
     }
     if (shown == 0)
