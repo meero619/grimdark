@@ -892,3 +892,8 @@ The accessible class chooser now enumerates mastery 10 as well. The installed Fa
 `tagSkillClassName10 = Berserker`; earlier expansions expose a placeholder and continue to skip it. The skill tree
 itself remains data-driven through the game's skill list and mastery id, so it does not need a separate hard-coded
 Berserker tree.
+
+Final build `ci-0f748bb` passed CI run 35722410761 (143 tests / 797 assertions). Its installed DLL matched the
+artifact SHA256 `E98EE9C185E454E8D232C8D04F02BA3804CC35C32C57266FD600971335934828`. A muted live `/skills` read on
+the existing character listed mastery enumerations 0 through 9 and `mastery 9 'Berserker'`; no points were spent.
+The character remained in Devil's Crossing and the game exited normally.
