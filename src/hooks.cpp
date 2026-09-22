@@ -299,8 +299,9 @@ std::u16string_view typed_chars() { return g_keys.typed; }
 static bool g_swallow_keys = false;
 static int g_real_keys = 0;                 // physical events exposed this poll
 static std::mutex g_synth_mu;
-static std::deque<std::vector<SynthKey>> g_synth_pending;  // one group per frame
-static std::vector<SynthKey> g_synth_active;               // the group visible this frame
+struct QueuedSynthKey { SynthKey key; bool report_to_mod; };
+static std::deque<std::vector<QueuedSynthKey>> g_synth_pending;  // one group per frame
+static std::vector<QueuedSynthKey> g_synth_active;               // the group visible this frame
 typedef int (*GetNumKeyEvents_t)(void*);
 static GetNumKeyEvents_t GetNumKeyEvents_hook_orig;
 typedef void* (*GetKeyEvent_t)(void*, void*, int);  // ButtonEvent returned by value -> hidden pointer
@@ -344,13 +345,14 @@ static int GetNumKeyEvents_hook(void* self) {
 }
 static void* GetKeyEvent_hook(void* self, void* out, int i) {
   if (i < g_real_keys) return GetKeyEvent_hook_orig(self, out, g_pass_idx[(size_t)i]);
-  SynthKey k{};
+  QueuedSynthKey queued{};
   {
     std::lock_guard lk(g_synth_mu);
     size_t j = (size_t)(i - g_real_keys);
     if (j >= g_synth_active.size()) return GetKeyEvent_hook_orig(self, out, 0);  // defensive: never index past the real queue
-    k = g_synth_active[j];
+    queued = g_synth_active[j];
   }
+  const SynthKey& k = queued.key;
   ++g_c_synthkey;
   unsigned char* b = (unsigned char*)out;
   memset(b, 0, 32);
@@ -359,15 +361,22 @@ static void* GetKeyEvent_hook(void* self, void* out, int i) {
   *(int*)(b + 12) = k.released ? 1 : 0;
   b[16] = 1; b[17] = k.shift; b[18] = k.alt; b[19] = k.ctrl;
   *(uint16_t*)(b + 20) = (uint16_t)k.ch;
-  g_keys.record(k.code, k.released);
-  g_keys.record_mods(k.shift, k.alt, k.ctrl);
-  if (!k.released && k.ch >= 0x20 && k.ch != 0x7f) g_keys.typed.push_back(k.ch);
+  if (queued.report_to_mod) {
+    g_keys.record(k.code, k.released);
+    g_keys.record_mods(k.shift, k.alt, k.ctrl);
+    if (!k.released && k.ch >= 0x20 && k.ch != 0x7f) g_keys.typed.push_back(k.ch);
+  }
   return out;
 }
-void push_key_event(const SynthKey& k) { std::lock_guard lk(g_synth_mu); g_synth_pending.push_back({k}); }
+static void push_synth_key(const SynthKey& k, bool report_to_mod) { std::lock_guard lk(g_synth_mu); g_synth_pending.push_back({{k, report_to_mod}}); }
+void push_key_event(const SynthKey& k) { push_synth_key(k, true); }
 void push_key(int code, bool shift, bool ctrl, bool alt, char16_t ch) {
   push_key_event({code, false, shift, ctrl, alt, ch});
   push_key_event({code, true, shift, ctrl, alt, ch});
+}
+void push_game_key(int code, bool shift, bool ctrl, bool alt, char16_t ch) {
+  push_synth_key({code, false, shift, ctrl, alt, ch}, false);
+  push_synth_key({code, true, shift, ctrl, alt, ch}, false);
 }
 void set_game_keys_muted(bool m) { g_swallow_keys = m; }
 bool game_keys_muted() { return g_swallow_keys; }

@@ -242,7 +242,7 @@ static void register_actions() {
   };
   for (const Lift& l : lifted) {
     int code = l.code; char16_t ch = l.ch;
-    m.register_action(l.id, l.label, InputCategory::Lifted, [code, ch] { hooks::push_key(code, false, false, false, ch); }).bind(l.code, true, false, false);
+    m.register_action(l.id, l.label, InputCategory::Lifted, [code, ch] { hooks::push_game_key(code, false, false, false, ch); }).bind(l.code, true, false, false);
   }
   // The game opens the character/inventory window from C or I; both lifts (Ctrl+I injects the plain C).
   m.find("game.character")->bind(0x17, true, false, false);

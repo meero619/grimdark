@@ -25,6 +25,9 @@ bool run_on_game_thread(std::function<void()> fn, unsigned timeout_ms = 5000);
 struct SynthKey { int code; bool released; bool shift, ctrl, alt; char16_t ch; };
 void push_key_event(const SynthKey& k);                  // one event, its own frame
 void push_key(int code, bool shift, bool ctrl, bool alt, char16_t ch);  // press frame + release frame
+// Deliver a key to the game without also feeding it back into Grimdark's own bindings.  Lifted native
+// commands use this so Ctrl+V opens Achievements rather than becoming the mod's plain-V review command.
+void push_game_key(int code, bool shift, bool ctrl, bool alt, char16_t ch);
 void set_game_keys_muted(bool m);                        // the game sees no physical key events ...
 bool game_keys_muted();
 void set_game_key_filter(std::function<bool(int code, bool released, bool shift, bool ctrl)> pass);  // ... except events this says to pass through (game thread); the modifiers are the EVENT's own flags
