@@ -34,14 +34,14 @@ class AchievementsScreen : public WindowScreen {
     std::unordered_set<std::string> seen;
     for (const textcap::Item& it : textcap::snapshot()) {
       std::string text = textcap::speakable(it.text);
-      if (text.empty() || compact_number(text) || it.y < 240 || !seen.insert(text).second) continue;
+      if (text.empty() || compact_number(text) || it.y < 240) continue;
       if (it.x >= 560 && it.x < 800 && it.y <= 800) {
         // The rail alternates category label and its "completed / total" line.
         if (text.find(" / ") != std::string::npos) category_counts.push_back(std::move(text));
         else category_labels.push_back({std::move(text), it.x, it.y});
       } else if (it.x >= 820 && it.x < 1500) {
         // The quest tracker lives beyond the achievements pane at the far right.
-        entries.push_back(std::move(text));
+        if (seen.insert(text).second) entries.push_back(std::move(text));
       }
     }
     std::vector<std::string> categories;
