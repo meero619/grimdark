@@ -887,3 +887,8 @@ descriptions are added. CI run 35721415427 passed 143 tests / 797 assertions and
 database SHA256 matched the artifact; a muted main-menu launch selected `map=gdx3`, opened `rooms_gdx3.db`, and mapped
 1294 game chunks. The test exited normally without loading a character. Live traversal inside Fangs remains to be
 verified when the character reaches that campaign.
+
+The accessible class chooser now enumerates mastery 10 as well. The installed Fangs localization confirms
+`tagSkillClassName10 = Berserker`; earlier expansions expose a placeholder and continue to skip it. The skill tree
+itself remains data-driven through the game's skill list and mastery id, so it does not need a separate hard-coded
+Berserker tree.

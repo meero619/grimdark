@@ -326,14 +326,12 @@ std::vector<unsigned> mastery_ids() {
   guarded("GetSkillMasteries", [&] { g.GetSkillMasteries(p, buf.vec()); });
   return buf.take("GetSkillMasteries");
 }
-// The nine masteries (records/ui/skills/classselection/skills_classselectiontable.dbr lists nine buttons; the tags
-// are tagSkillClassName01..09 / tagSkillClassDescription01..09 and enumeration N = class{N+1:02}). 07-09 are the
-// expansions' (Inquisitor, Necromancer = Ashes of Malmouth; Oathkeeper = Forgotten Gods): the base game ships their
-// mastery record and the placeholder text "?", the DLC databases supply the trees and the names -- so a "?" name is
-// the base-only install and the mastery is skipped (2026-09-15, docs/masteries.md).
+// The ten masteries use tagSkillClassName01..10 / tagSkillClassDescription01..10 and enumeration N =
+// class{N+1:02}. 07-08 are Ashes of Malmouth, 09 is Forgotten Gods, and 10 is Fangs of Asterkarn. Earlier layers
+// ship placeholder "?" text for unavailable masteries, so those entries are skipped.
 std::vector<MasteryChoice> mastery_choices() {
   std::vector<MasteryChoice> out;
-  for (int i = 0; i < 9; ++i) {
+  for (int i = 0; i < 10; ++i) {
     MasteryChoice c{i, localize(std::format("tagSkillClassName{:02}", i + 1)), localize(std::format("tagSkillClassDescription{:02}", i + 1))};
     if (c.name.empty() || c.name == "?") continue;
     out.push_back(std::move(c));
