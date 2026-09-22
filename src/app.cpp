@@ -117,7 +117,7 @@ static void register_actions() {
   m.register_action("travel.reviewed", "Walk to selected target or stop", InputCategory::InGame, [] { travel::reviewed(); }).bind(0x27, true, false, false);
   m.register_action("travel.followed", "Walk to followed destination", InputCategory::InGame, [] { travel::followed(); }).bind(0x28, true, false, false);
   m.register_action("travel.town", "Return to town", InputCategory::InGame, [] { travel::return_to_town(); }).bind(0x26, true, true, false);
-  m.register_action("travel.stop", "Stop travel", InputCategory::Global, [] { travel::stop(); }).bind(keys::Escape, true, false, false);
+  m.register_action("travel.stop", "Stop travel", InputCategory::Global, [] { travel::stop(); }).bind(0x42); // F8; Ctrl+Escape belongs to Windows
   // Ctrl+Tab / Ctrl+Shift+Tab: the current screen's tabs (tab list across the top; the page is one column).
   m.register_action("ui.tabNext", "Next tab", InputCategory::UI, [] { Screen* s = g_screens.current(); if (s) s->switch_tab(1); }).bind(keys::Tab, true, false, false);
   m.register_action("ui.tabPrev", "Previous tab", InputCategory::UI, [] { Screen* s = g_screens.current(); if (s) s->switch_tab(-1); }).bind(keys::Tab, true, true, false);

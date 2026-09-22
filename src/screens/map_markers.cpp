@@ -55,6 +55,9 @@ class MapMarkersScreen : public WindowScreen {
         value = [d, hour] { MessageBuilder m; strings::push_distance_bearing(m, d, hour); return m.build(); };
       }
       world::MapMarker copy = mk;
+      // Nearby entity matching is approximate. A quest/location marker must stay at its map position,
+      // not follow an unrelated creature standing beside it. Only person icons represent moving targets.
+      if (copy.type != 2) copy.id = 0;
       b.add_item(ControlId::structural(std::format("marker.{}", i)),
                  row_item(label, value, [this, copy] {
                    world::set_follow_target(copy.id, copy.pos, copy.label);

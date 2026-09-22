@@ -86,6 +86,7 @@ void start(world::TravelTarget selected) {
   stop("");
   if (!world::in_world() || !path::finite(point(selected.pos))) { say("No destination available"); return; }
   target = std::move(selected); owner = world::player_id();
+  if (target.id) world::lock_target(target.id); else world::lock_point(target.pos);
   mode = Mode::Arming; deadline = app::now() + 15;
   say("Preparing to walk to " + target.label);
 }
@@ -179,7 +180,7 @@ void tick() {
   }
   float d = path::distance(point(me), point(target.pos));
   const float arrival = target.enemy ? 2.4f : 1.4f;
-  if (d < arrival && std::abs(me.y - target.pos.y) < 3.0f) { stop("Arrived near " + target.label + (target.id ? ". Press J to interact or attack." : "")); return; }
+  if (d < arrival && std::abs(me.y - target.pos.y) < 3.0f) { stop("Arrived near " + target.label + (target.id ? ". Press J to interact or attack." : ". Use N to select an entrance or person if needed.")); return; }
   if (target.id && path::distance(point(planned), point(target.pos)) > 2 && now - last_plan > 0.8) {
     if (!plan(me)) { stop("The target moved beyond a reachable route"); return; }
   }

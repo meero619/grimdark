@@ -163,7 +163,7 @@ F1 -> Travel opens the travel menu. Ctrl+Shift+semicolon opens it directly.
 - **Ctrl+Shift+L** opens a personal rift and offers the game's unlocked riftgate destinations. Choose
   Devil's Crossing or another unlocked destination with Enter. This uses normal rift travel; areas that
   forbid personal rifts still forbid it. Escape leaves the normal rift map available.
-- **W/A/S/D**, Escape, an attack/interact key, or **Ctrl+Escape** stops automatic walking. Opening another
+- **W/A/S/D**, Escape, an attack/interact key, or **F8** stops automatic walking. Opening another
   window, losing focus, pausing, dying, losing the target, harmful ground ahead, or getting stuck also stops
   it with a spoken reason. Travel never resumes by itself after being stopped.
 
