@@ -12,14 +12,14 @@ using namespace gd::core;
 using exe_ui::MainMenu;
 using exe_ui::WidgetA;
 
-// Difficulty Select, read from its window in the exe's menu tree (measured 2026-08-22): the four tiles are
+// Difficulty Select, read from its window in the exe's menu tree (measured 2026-08-22): the difficulty tiles are
 // buttons (pressed = selected, disabled = locked on the account), the description and its stat lines are
 // text widgets (the inactive ones belong to other tiles), and the last two buttons are Create/Back (after
 // Create Character) or Accept/Cancel (from the main menu's difficulty button).
 struct Dialog {
   WidgetA window;
   std::vector<WidgetA> tiles, buttons;
-  explicit operator bool() const { return window && tiles.size() == 4 && buttons.size() == 2; }
+  explicit operator bool() const { return window && !tiles.empty() && buttons.size() == 2; }
 };
 static Dialog dialog() {
   Dialog d;
@@ -28,8 +28,10 @@ static Dialog dialog() {
   if (!win || exe_ui::window_hidden_flag(win, MainMenu::kDifficultyHidden)) return d;
   d.window = exe_ui::window_node(win);
   std::vector<WidgetA> all = d.window.buttons();
-  if (all.size() < 6) return d;
-  d.tiles.assign(all.begin(), all.begin() + 4);
+  // Main Campaign offers four tiles; Crucible offers Aspirant, Challenger and Gladiator.
+  // Both layouts end with the same Accept/Cancel pair.
+  if (all.size() < 3) return d;
+  d.tiles.assign(all.begin(), all.end() - 2);
   d.buttons.assign(all.end() - 2, all.end());
   return d;
 }
