@@ -302,7 +302,7 @@ def cmd_status(db, a):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", default=DB, help="rooms database (build/rooms/rooms.db = the DLC world, build/rooms/rooms_base.db = the base game)")
+    ap.add_argument("--db", default=DB, help="rooms database (rooms_gdx3.db = Fangs, rooms.db = Forgotten Gods, rooms_base.db = base)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("list"); s.add_argument("region"); s.add_argument("--status"); s.add_argument("--subregion"); s.add_argument("--keys-only", action="store_true"); s.set_defaults(fn=cmd_list)
     s = sub.add_parser("facts"); s.add_argument("key"); s.set_defaults(fn=cmd_facts)

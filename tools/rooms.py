@@ -319,6 +319,12 @@ def cmd_seams(wm, args):
     for a, b in [(a, b) for i, a in enumerate(sorted(regions)) for b in sorted(regions)[i + 1:]]:
         ax0, az0, alab, ah, akeys = regions[a]
         bx0, bz0, blab, bh, bkeys = regions[b]
+        # Most regions are nowhere near one another. Reject disjoint grid rectangles before allocating four
+        # full-grid neighbor arrays for the pair; Fangs raises this loop to more than 20,000 pairs.
+        ax1, az1 = ax0 + alab.shape[1] * 0.25, az0 + alab.shape[0] * 0.25
+        bx1, bz1 = bx0 + blab.shape[1] * 0.25, bz0 + blab.shape[0] * 0.25
+        if ax1 < bx0 or bx1 < ax0 or az1 < bz0 or bz1 < az0:
+            continue
         awalk, bwalk = alab >= 0, blab >= 0
         pairs = []   # (labelA, labelB, seam_x, seam_z)
         # integer cell offset of B's frame relative to A's (grids are chunk-aligned, cell 0.25)
@@ -389,7 +395,7 @@ def prettify_stem(stem):
 
 
 def text_en_tags():
-    """{tag -> localized text} for every line of the installed Text_EN arcs (base < gdx1 < gdx2)."""
+    """{tag -> localized text} for every line of the installed Text_EN arcs in expansion order."""
     from gdmap import gamefiles
     return gamefiles.text_tags()
 

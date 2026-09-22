@@ -6,7 +6,7 @@ Layout inside the zip (one top-level folder, so unzipping anywhere gives a self-
 
     grimdark/
       gdlaunch.exe (the player runs this), grimdark.dll, prism.dll, gdinject.exe (dev: inject into a running game)
-      assets/          audio/... from the repo + rooms.db, rooms_base.db built by CMake from data/rooms
+      assets/          audio/... from the repo + expansion/base room databases built by CMake from data/rooms
                        (the DLL loads these from next to itself)
       README.md, LICENSE, THIRD_PARTY.md
       licenses/prism/  prism's NOTICE + LICENSES (MPL-2.0 attribution for the redistributed prism.dll)
@@ -50,7 +50,7 @@ def main():
     for name in ("gdlaunch.exe", "grimdark.dll", "prism.dll", "gdinject.exe"):
         add("grimdark/" + name, os.path.join(a.build, name))
     add_tree("grimdark/assets", os.path.join(ROOT, "assets"))   # the repo copy, not the build's mirror of it
-    for name in ("rooms.db", "rooms_base.db"):   # build products (tools/rooms_pack.py build, run by CMake)
+    for name in ("rooms_gdx3.db", "rooms.db", "rooms_base.db"):   # built from data/rooms by CMake
         add("grimdark/assets/" + name, os.path.join(a.build, "assets", name))
     add("grimdark/README.md", os.path.join(ROOT, "README.md"))
     add("grimdark/LICENSE", os.path.join(ROOT, "LICENSE"))

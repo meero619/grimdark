@@ -1,7 +1,6 @@
 """The rooms data in git-friendly form <-> the SQLite db the mod reads (docs/rooms.md "Data layout").
 
-The source of truth is data/rooms/<world>/ (world = gdx2 for the Forgotten Gods map the mod ships as rooms.db, base for
-the frozen base-game map = rooms_base.db):
+The source of truth is data/rooms/<world>/ (gdx3 = Fangs of Asterkarn, gdx2 = Forgotten Gods, base = base game):
 
     meta.json                 the meta table + this format's version
     regions/<region>.jsonl    one JSON object per line: {"region": row}, then {"subregion": row}..., {"room": row}...,
@@ -16,7 +15,7 @@ build needs no uv / numpy (gdmap.roomsdb imports numpy lazily).
     uv run tools/rooms_pack.py pack   [--db build/rooms/rooms.db] [--out data/rooms/gdx2] [--force]
     uv run tools/rooms_pack.py unpack [--dir data/rooms/gdx2] [--out build/rooms/rooms.db] [--force]
     uv run tools/rooms_pack.py verify [--db ...] [--dir ...]        exact table-by-table comparison
-    python tools/rooms_pack.py build  [--out build/ninja/assets]    both worlds (what CMake runs)
+    python tools/rooms_pack.py build  [--out build/ninja/assets]    all worlds (what CMake runs)
     uv run tools/rooms_pack.py status                                is each working db ahead of / behind its text?
 """
 from __future__ import annotations
@@ -33,7 +32,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 from gdmap.roomsdb import SCHEMA  # noqa: E402  (stdlib import: numpy is lazy there)
 
 FORMAT = 1
-WORLDS = {"gdx2": "rooms.db", "base": "rooms_base.db"}   # world dir -> the db name the DLL looks for
+WORLDS = {"gdx3": "rooms_gdx3.db", "gdx2": "rooms.db", "base": "rooms_base.db"}
 DATA = os.path.join(ROOT, "data", "rooms")
 WORK = os.path.join(ROOT, "build", "rooms")
 GRID_MAGIC = b"GDROOMS1"
@@ -247,7 +246,7 @@ def main() -> None:
         s.add_argument("--world", default="gdx2", choices=sorted(WORLDS), help="picks the default --db / --dir")
         s.add_argument("--db", default=None); s.add_argument("--dir", default=None)
         s.add_argument("--force", action="store_true")
-    s = sub.add_parser("build", help="unpack both worlds into an assets directory (CMake)")
+    s = sub.add_parser("build", help="unpack all worlds into an assets directory (CMake)")
     s.add_argument("--out", default=os.path.join(ROOT, "build", "ninja", "assets"))
     sub.add_parser("status")
     a = ap.parse_args()

@@ -193,10 +193,10 @@ Burrwitch whose tag text was deleted, map01_gatex01a = Obsidian Throne). Region 
 zone name -- the travel label, still used by dev output and as the fallback.
 
 ## Expansion maps (2026-09-14, `tools/gdmap/gamefiles.py`)
-Each expansion ships a COMPLETE replacement `world001.map` in its own `Levels.arc` (`gdx1/`, `gdx2/`), not a patch:
-base 633 chunks, Ashes of Malmouth 876, Forgotten Gods 1582 (+ 7 `Sandbox/` dev levels the live table also holds).
-The game mounts base < gdx1 < gdx2, last wins per file and per database record (verified: `/regions` counts the
-gdx2 table exactly, offsets identical). The base chunks are recompiled with the expansion layers on -- new NPCs and
+Each expansion ships a COMPLETE replacement `world001.map` in its own `Levels.arc`, not a patch: base 633 chunks,
+Ashes of Malmouth 876, Forgotten Gods 1582, and Fangs of Asterkarn 2050 region records.
+The game mounts base < gdx1 < gdx2 < gdx3, last wins per file and per database record. The base chunks are recompiled
+with the expansion layers on -- new NPCs and
 props in the old towns (Devil's Crossing gains the Emissary, the illusionist, six Black Legion soldiers), new side
 areas (Broken Hills' Lost Ruins, Pine Barrens, Twin Falls), new shrines and totems, a 14th painted sector table --
 so 417 of 633 bodies differ but only 164 walkable grids do, 99 of them by < 1 %. Three dungeons MOVE intact by
@@ -208,13 +208,14 @@ Details of the survey: the 2026-09-14 session (mapdiff / bodydiff / anchor tests
 Consequences for the tools and the db:
 - **Every offline tool reads through `gamefiles.py`**: the highest installed layer's `Levels.arc`, the databases
   overlaid (`arz.load()` returns a `Layered` view, later records override), the Text arcs merged (the DLC zone names
-  `tagGDX1Rift*` / `tagGDX2Rift*` live only there). `GRIMDARK_GAME_LAYERS=base` forces the base world.
-- The gdx2 region record has a third string slot (a skybox record) the base map left empty; `mapfile.py` parses it.
+  `tagGDX1Rift*` / `tagGDX2Rift*` / `tagGDX3*` live only there). `GRIMDARK_GAME_LAYERS=base` forces the base world.
+- The expansion region record has a third string slot for a skybox. Fangs sometimes roots it at `art/terrain/`
+  instead of `records/`; `mapfile.py` recognizes the length-prefixed path rather than assuming one root.
 - **The level-body cache is per map** (`build/rooms/cache/<map_id>/`): gdx2 rewrote moved chunks at the SAME byte
   size and the shared name+size cache served the base bodies (Warden's Laboratory came out at its old place).
-- **One db per world**: `assets/rooms.db` is built from the gdx2 map (`meta.map = gdx2`), `assets/rooms_base.db` is
-  the frozen base-game db. `src/rooms.cpp` picks by whether `gdx2/resources/Levels.arc` exists under the install
-  root (an Ashes-only install gets the base db and a log line). Tools still target `assets/rooms.db`.
+- **One db per supported world**: `assets/rooms_gdx3.db` is Fangs, `assets/rooms.db` is Forgotten Gods, and
+  `assets/rooms_base.db` is the frozen base game. `src/rooms.cpp` selects the highest installed expansion. An
+  Ashes-only install gets the base db and a log line.
 - **Regen recipe** (what was run): `rooms.py shift <region> --dx 224 --dz 160 --write` for the three moved
   dungeons -> `rooms.py rebuild --write --prune` (re-segments every cluster of the current map under the stored
   region whose chunk set it overlaps most, so `write_segmentation` re-attaches authored rooms by anchor key; new
@@ -242,13 +243,13 @@ The rooms data is committed as text, not as the SQLite files (which were 41 / 70
 GitHub caps at 100 MB): `data/rooms/<world>/` with `meta.json`, `regions/<region>.jsonl` (one JSON object per line:
 the region row, then its sub-regions, rooms, exits and shots, each sorted -- a title edit is a one-line diff) and
 `grids/<region>.bin` (the label / height / overlay RLE blobs, zlib-compressed ~0.3, behind a JSON header). Worlds:
-`gdx2` = the Forgotten Gods map the mod ships as `rooms.db`, `base` = the frozen base-game map = `rooms_base.db`.
+`gdx3` = Fangs (`rooms_gdx3.db`), `gdx2` = Forgotten Gods (`rooms.db`), and `base` = base game (`rooms_base.db`).
 `tools/rooms_pack.py` moves between the two forms and is stdlib-only:
 
 - The mod's dbs are BUILD PRODUCTS: CMake runs `rooms_pack.py build` into `build/ninja/assets/` (re-run when any data
   file changes) before the DLL builds, and `tools/package.py` takes them from there. Nothing under `assets/` is a db.
 - The authoring tools (`rooms.py`, `author.py`, `describe_or.py`, `shots.py`) work on `build/rooms/rooms.db` (and
-  `rooms_base.db`), created by `rooms_pack.py unpack --world gdx2|base`. After an authoring session run
+  `rooms_base.db`), created by `rooms_pack.py unpack --world gdx3|gdx2|base`. After an authoring session run
   `rooms_pack.py pack --world ...` and commit the text. `pack` refuses when the text changed after the db was written
   (unpack first), `unpack` refuses when the db is newer than the text (pack first); `--force` overrides;
   `status` says which side is ahead. `verify` proves a db and its text are identical table by table.

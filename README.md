@@ -30,10 +30,10 @@ get what you get; hopefully you have fun, but it might also explode on you in wa
 
 ## Setup
 
-The mod supports the base game and the full install with both expansions (Ashes of Malmouth and Forgotten Gods). Each
-expansion replaces the whole world map, so the mod ships a rooms database for each world and picks the right one from
-what is installed. An install with Ashes of Malmouth alone uses the base game's rooms and will be wrong in a few places,
-and additionally will not describe rooms in that DLC alone unless you also install Forgotten Gods.  I may eventually require some or all of the DLC, and do not intend to continue improving anything but the Malmouth/FG setup because testing all possible combinations is too time consuming.
+The mod supports the base game and the full install with Ashes of Malmouth, Forgotten Gods, and Fangs of Asterkarn.
+Each expansion replaces the whole world map, so the mod ships separate room databases for the base, Forgotten Gods,
+and Fangs worlds and picks the right one from what is installed. An install with Ashes of Malmouth alone still uses
+the base game's rooms and will be wrong in a few places; that uncommon combination does not have its own database.
 
 Do not launch the game directly (from Steam or the exe). If you do, you will need to restart your screen reader because
 the key hooks will be dropped.  This manifests as capslock/insert not working as they should.  The game uses very old

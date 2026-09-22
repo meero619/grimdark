@@ -17,7 +17,7 @@ from .arc import Arc
 from . import gamefiles
 
 GAME_DIR = gamefiles.GAME_DIR
-LEVELS_ARC = gamefiles.levels_arc()     # the world the game mounts: gdx2 > gdx1 > base (gamefiles.py, 2026-09-14)
+LEVELS_ARC = gamefiles.levels_arc()     # the world the game mounts: gdx3 > gdx2 > gdx1 > base
 MAP_NAME = "world001.map"
 HEAD_BYTES = 4 << 20          # the region table ends well inside the first 4 MB
 
@@ -66,13 +66,20 @@ class WorldMap:
             # walk backwards: [len][lvl path] is preceded by [len][location] preceded by guid(16) preceded by IntVec3
             # ... [len][location record] [len][shrine record] [len][skybox record] [len][lvl path] ...
             def string_before(end: int) -> tuple[int, str]:
-                """A length-prefixed records/ string ending at `end` (possibly empty): (prefix pos, text)."""
+                """A length-prefixed path string ending at `end` (possibly empty): (prefix pos, text).
+
+                Older maps use records/... for all three optional slots. Fangs also uses an art/terrain/...
+                skybox path, so recognize the length prefix rather than assuming a records/ root.
+                """
                 if struct.unpack_from("<I", head, end - 4)[0] == 0:
                     return end - 4, ""
-                s = head.rfind(b"records/", max(0, end - 300), end)
-                if s < 0 or struct.unpack_from("<I", head, s - 4)[0] != end - s:
-                    raise ValueError(f"region record {idx} ({name}): cannot parse the string ending at {end:#x}")
-                return s - 4, head[s:end].decode(errors="replace")
+                for s in range(max(4, end - 300), end):
+                    if struct.unpack_from("<I", head, s - 4)[0] != end - s:
+                        continue
+                    raw = head[s:end]
+                    if raw and all(0x20 <= c < 0x7f for c in raw):
+                        return s - 4, raw.decode()
+                raise ValueError(f"region record {idx} ({name}): cannot parse the string ending at {end:#x}")
             # the third slot is a skybox record (records/level art/terrain/skybox_*.dbr) in the Forgotten Gods
             # map (gdx2, 2026-09-14); the base map always has it empty (u32 0)
             q_sky, skybox = string_before(m.start() - 4)

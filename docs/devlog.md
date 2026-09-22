@@ -866,3 +866,21 @@ Active quest destinations resolve authored area names mentioned in the current q
 Validation: fork CI run 35684974440, code 6c13696, passed 143 tests / 797 assertions. Installed DLL SHA256 881A82EA4AFA81534C87CE9D49B1498287C268355B83AEFD7AFADF2722A1E94A matches the downloaded artifact. Live tests with amro: walked to Bourbon and around stairs to Kasparov; F8, manual W, and pause cancellation worked, without automatic resumption. Final build walked the complete Devil's Crossing-to-Burial Hill itinerary, arriving at the signposted road junction (-65.57,3.43,-283.09), with full health. A tracker-selected Scrapheap Rift Scourge announced as distant / 40 away generated a 13-point route and moved the character toward it; that test was stopped before arrival/combat. Map-row Backspace walked toward Burial Hill Entrance and correctly stopped on damage. The personal-rift picker returned the character from Burial Hill to Devil's Crossing (98,7.21,41), full health. Lower Crossing Rift became available through normal traversal.
 
 Tests used muted background dev mode; the player's own NVDA listening and physical shortcut acceptance remain outstanding. Dungeon entry, an entire combat encounter, and arbitrary far/unloaded destinations were not validated. The character was returned to town and the game exited normally. Original display settings were restored byte-for-byte. Original installation and saves were backed up before testing. Uses a separate codex/accessible-travel fork branch and CI build, without changing upstream or the fork's main branch.
+
+## 2026-09-22: Fangs of Asterkarn map and travel data
+
+Added `gdx3` as the fourth game-data layer and a separately packaged `rooms_gdx3.db`; the runtime selects it whenever
+`gdx3/resources/Levels.arc` is installed, while preserving the Forgotten Gods and base databases as fallbacks. The
+Fangs map contains 2050 region records. Its optional skybox path may start at `art/terrain/` rather than `records/`,
+so the map parser now validates the length-prefixed path without assuming one root.
+
+Generated the database from the installed Fangs files: 202 physical regions, 23049 room rows, 34622 exit rows,
+22772 painted area names, and 928 directed cross-region exit rows. The git-friendly source round-tripped identically
+through `rooms_pack.py`; a clean three-world build produced `rooms_gdx3.db`, `rooms.db`, and `rooms_base.db`. The seam
+pass now rejects disjoint grid rectangles before allocating neighbor arrays, reducing this Fangs pass from many
+minutes to 29 seconds without changing the touching-grid calculation.
+
+Two physical clusters were excluded: the existing water-only `coastroad_2`, and Fangs' frozen fortress whose three
+level bodies contain navigation tiles far outside their chunk footprints. The rest of Fangs has area-level speech and
+route geometry; its new rooms are currently announced as the game area plus a stable room number until authored room
+descriptions are added. CI compilation, installed database selection, and live Fangs traversal remain to be verified.

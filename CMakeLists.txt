@@ -72,16 +72,16 @@ add_custom_command(TARGET grimdark POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:grimdark>/assets)
 
 # --- the rooms databases: built from data/rooms (git-friendly text + compressed grids) by tools/rooms_pack.py ---
-# The DLL loads rooms.db / rooms_base.db from next to itself; the packer is stdlib-only Python (no uv, no numpy),
+# The DLL loads the matching rooms database from next to itself; the packer is stdlib-only Python (no uv, no numpy),
 # so CI and a fresh checkout build them without the game or the authoring toolchain. Re-runs when any data file or
 # the packer changes. The authoring tools work on unpacked copies in build/rooms/ (docs/rooms.md "Data layout").
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 file(GLOB_RECURSE ROOMS_DATA CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/data/rooms/*)
-set(ROOMS_DBS ${CMAKE_BINARY_DIR}/assets/rooms.db ${CMAKE_BINARY_DIR}/assets/rooms_base.db)
+set(ROOMS_DBS ${CMAKE_BINARY_DIR}/assets/rooms_gdx3.db ${CMAKE_BINARY_DIR}/assets/rooms.db ${CMAKE_BINARY_DIR}/assets/rooms_base.db)
 add_custom_command(OUTPUT ${ROOMS_DBS}
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/rooms_pack.py build --out ${CMAKE_BINARY_DIR}/assets
   DEPENDS ${ROOMS_DATA} ${CMAKE_SOURCE_DIR}/tools/rooms_pack.py ${CMAKE_SOURCE_DIR}/tools/gdmap/roomsdb.py
-  COMMENT "packing data/rooms -> assets/rooms.db + rooms_base.db")
+  COMMENT "packing data/rooms -> expansion and base room databases")
 add_custom_target(rooms_dbs ALL DEPENDS ${ROOMS_DBS})
 add_dependencies(grimdark rooms_dbs)
 

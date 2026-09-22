@@ -64,7 +64,7 @@ def _load_one(path):
 
 
 def load():
-    """(d, strings, recs) over the installed overlay (base < gdx1 < gdx2), or over `P` alone if it was changed."""
+    """(d, strings, recs) over the installed expansion overlay, or over `P` alone if it was changed."""
     if P != DEFAULT:
         return _load_one(P)
     from gdmap import gamefiles
