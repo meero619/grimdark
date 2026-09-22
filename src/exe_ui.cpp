@@ -64,7 +64,15 @@ constexpr size_t kDialog_Text = 0x00, kDialog_Party = 0x60, kDialog_Type = 0x64;
 }  // namespace off
 
 // Code bytes at sites the layout depends on (from the unpacked image, 2026-08-22).
-struct Signature { uintptr_t rva; const char* what; const char* bytes; };
+struct Signature {
+  uintptr_t rva;
+  const char* what;
+  const char* bytes;
+  size_t size;
+  template <size_t N>
+  constexpr Signature(uintptr_t address, const char* description, const char (&pattern)[N])
+      : rva(address), what(description), bytes(pattern), size(N - 1) {}
+};
 const Signature kSignatures[] = {
   {0x281640, "Illusionist selection", "\x88\x54\x24\x10\x55\x53\x56\x57\x41\x54"},
   {0x2823e0, "Illusionist appearance pages", "\x48\x8b\xc4\x57\x41\x54\x41\x55\x41\x56"},
@@ -87,8 +95,6 @@ const Signature kSignatures[] = {
   {0x185640, "DevotionWindow ctor", "\x48\x89\x4c\x24\x08\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57"},
   {0x17ea10, "Star::HandleMouseEvent", "\x48\x8b\xc4\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x81"},
 };
-const size_t kSignatureLens[] = {10, 10, 5, 16, 12, 12, 12, 12, 12, 12, 16, 16, 16, 16, 16, 16, 16, 16};   // each <= kSignatureMax
-static_assert(std::size(kSignatureLens) == std::size(kSignatures));
 constexpr size_t kSignatureMax = 16;
 
 uintptr_t g_base = 0;
@@ -201,8 +207,8 @@ bool check_layout() {
   for (size_t i = 0; i < std::size(kSignatures); ++i) {
     const Signature& s = kSignatures[i];
     uint8_t buf[kSignatureMax] = {};
-    size_t n = kSignatureLens[i] <= kSignatureMax ? kSignatureLens[i] : kSignatureMax;   // a longer signature overflowed this buffer once (2026-08-22)
-    bool match = s.rva + n <= g_image_size && read_mem((void*)(g_base + s.rva), buf, n) && memcmp(buf, s.bytes, n) == 0;
+    size_t n = s.size;
+    bool match = n <= kSignatureMax && s.rva + n <= g_image_size && read_mem((void*)(g_base + s.rva), buf, n) && memcmp(buf, s.bytes, n) == 0;
     if (!match) { ok = false; log::writef("exe_ui: signature MISMATCH at exe+{:#x} ({})", s.rva, s.what); }
   }
   // The button vtables must dispatch HandleMouseEvent (+0x20) to the functions the signatures cover.
