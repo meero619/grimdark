@@ -39,6 +39,7 @@ screenshots. Rows in the game's order; "-" = unassigned.
 | Drink Health Potion | R | Gamepad LBumper |
 | Center Map (Map Window) | - | - |
 | Drop Item | B | - |
+| Accessible inventory drop | Ctrl+B | On a bag item: names it and opens a Cancel-first confirmation. Drop item releases the whole stack on the ground. Escape cancels. Equipped items must be unequipped first. Completion is announced after the item leaves the bag. |
 | Personal Riftgate | L | Gamepad Up |
 | Switch Weapons | - | Gamepad LThumb |
 | Interact | U | - |

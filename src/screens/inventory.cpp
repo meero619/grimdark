@@ -61,6 +61,23 @@ class InventoryScreen : public WindowScreen, public AssignSource {
     invalidate();
   }
   void on_focus() override { invalidate(); WindowScreen::on_focus(); }
+  std::vector<ScreenAction> actions() override {
+    auto result = WindowScreen::actions();
+    result.push_back({"game.drop", [this] { confirm_drop(); }});
+    return result;
+  }
+  void on_update() override {
+    if (!drop_) return;
+    if (!bag_item(drop_->id)) {
+      MessageBuilder m; m.fragment(strings::kDropDone).fragment(drop_->label);
+      speech::speak(m.build(), true);
+      drop_.reset(); invalidate();
+    } else if (hooks::frame() - drop_->frame >= 180) {
+      speech::speak(strings::kDropFailed, true);
+      drop_.reset(); invalidate();
+    }
+  }
+  void on_pop() override { drop_.reset(); }
 
   void build(GraphBuilder& b) override {
     const std::vector<gameapi::Bag>& bags = bags_.get([] { return gameapi::bags(); }, 30);
@@ -80,6 +97,45 @@ class InventoryScreen : public WindowScreen, public AssignSource {
   }
 
  private:
+  struct PendingDrop { unsigned id; std::string label; uint64_t frame; };
+  std::optional<PendingDrop> drop_;
+  static std::optional<gameapi::BagItem> bag_item(unsigned id) {
+    for (const auto& bag : gameapi::bags())
+      for (const auto& item : bag.items) if (item.id == id) return item;
+    return {};
+  }
+  void confirm_drop() {
+    if (drop_) { speech::speak(strings::kDropPending, true); return; }
+    GraphNavigator* nav = app::navigator();
+    auto focus = nav ? nav->focused_id() : std::optional<ControlId>{};
+    unsigned id = 0;
+    if (focus) for (const auto& bag : gameapi::bags()) for (const auto& item : bag.items)
+      if (*focus == ControlId::structural(std::format("inventory.item{}", item.id))) id = item.id;
+    auto item = bag_item(id);
+    if (!item) { speech::speak(strings::kDropChoose, true); return; }
+    const auto name = item->name;
+    const auto count = item->stack;
+    const auto record = gameapi::object_record(item->p);
+    MessageBuilder label;
+    strings::push_stack(label, name.empty() ? std::format("item {}", id) : name, count);
+    if (item->component) label.fragment(strings::kWithComponent);
+    const auto spoken = label.build();
+    MessageBuilder title;
+    title.fragment(strings::kDropConfirm).fragment(spoken);
+    if (count > 1) title.list_item().fragment(strings::kDropWholeStack);
+    open_picker(title.build(), {{0, std::string(strings::kDropCancel), {}}, {1, std::string(strings::kDropYes), {}}},
+      [this, id, name, count, record, spoken](unsigned choice) {
+        if (!choice) return;
+        auto current = bag_item(id);
+        if (!window().visible() || drop_ || !current || current->name != name || current->stack != count ||
+            gameapi::object_record(current->p) != record) {
+          speech::speak(strings::kDropChanged, true); return;
+        }
+        if (!gameapi::drop_item(id)) { speech::speak(strings::kDropFailed, true); return; }
+        drop_ = PendingDrop{id, spoken, hooks::frame()};
+        invalidate();
+      });
+  }
   void invalidate() { bags_.invalidate(); equipment_.invalidate(); sheet_.invalidate(); }
   // Activating a component in a bag opens the attach picker: every item (across bags + equipped) it fits,
   // from the game's own Player::GetCompatibleItems. Picking one attaches + consumes the component (no

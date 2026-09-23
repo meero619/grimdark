@@ -478,4 +478,13 @@ inline constexpr std::string_view kIllusionCost = "Total cost in iron bits";
 inline constexpr std::string_view kIllusionMoney = "Available iron bits";
 inline constexpr std::string_view kIllusionConfirm = "Confirm applying all previewed illusions";
 inline constexpr std::string_view kIllusionRequested = "Apply requested";
+inline constexpr std::string_view kDropChoose = "Select an item in a bag first. Equipped items must be unequipped before dropping.";
+inline constexpr std::string_view kDropConfirm = "Drop on the ground";
+inline constexpr std::string_view kDropWholeStack = "This drops the entire stack.";
+inline constexpr std::string_view kDropYes = "Drop item";
+inline constexpr std::string_view kDropCancel = "Cancel";
+inline constexpr std::string_view kDropChanged = "The item or stack changed. Select it again.";
+inline constexpr std::string_view kDropPending = "Drop already requested.";
+inline constexpr std::string_view kDropFailed = "Drop not confirmed. The item remains in your bag.";
+inline constexpr std::string_view kDropDone = "Dropped";
 }  // namespace gd::strings

@@ -318,7 +318,8 @@ hotbar manager and works against the locked target like any aimed skill.
 | Ctrl+L | Personal riftgate |
 | Ctrl+1..0, Ctrl+J, Ctrl+I | Inside inventory / skills: put the focused skill (or, on a weapon slot, the weapon's basic attack) on quickbar slot 1..10 / the left mouse / the right mouse |
 | Ctrl+O | Loot filter config |
-| Ctrl+K, Ctrl+G, Ctrl+H, Ctrl+V, Ctrl+B, Ctrl+X, Ctrl+Z, Ctrl+P, Ctrl+], Ctrl+\, Ctrl+Enter | The game's own group, game menu, help, achievements, drop item, item tooltips, show items, pause, toggle UI, party display, chat. We do not yet support these. |
+| Ctrl+B (inventory bag item) | Drop the reviewed item on the ground after a Cancel-first confirmation. Stacked items drop as a whole stack; equipped items must be unequipped first. |
+| Ctrl+K, Ctrl+G, Ctrl+H, Ctrl+V, Ctrl+X, Ctrl+Z, Ctrl+P, Ctrl+], Ctrl+\, Ctrl+Enter | The game's own group, game menu, help, achievements, item tooltips, show items, pause, toggle UI, party display, chat. Support varies by screen. |
 
 # Development
 
