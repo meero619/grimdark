@@ -20,6 +20,23 @@ inline Point toward(Point from, Point to, float length) {
   float t = d > 0.001f ? std::min(1.0f, length / d) : 1.0f;
   return {from.x + t * (to.x - from.x), from.y + t * (to.y - from.y), from.z + t * (to.z - from.z)};
 }
+// Candidates are standing positions, not permission to walk through the target.
+inline std::vector<Point> approach_points(Point target, Point from) {
+  if (!finite(target) || !finite(from)) return {};
+  std::vector<Point> out;
+  const float start = std::atan2(from.z-target.z, from.x-target.x);
+  for (float radius : {1.0f, 2.0f, 3.0f, 3.5f})
+    for (int i=0; i<16; ++i) {
+      const float angle = start + i * 6.28318530718f / 16;
+      out.push_back({target.x+radius*std::cos(angle), target.y, target.z+radius*std::sin(angle)});
+    }
+  return out;
+}
+inline bool reaches_approach(const std::vector<Point>& route, Point candidate, Point target) {
+  return finite(target) && reaches(route, candidate, 0.6f) &&
+    distance(route.back(), target) <= 3.75f &&
+    std::abs(route.back().y-candidate.y) < 1.5f && std::abs(route.back().y-target.y) < 3.0f;
+}
 // Measure forward progress by distance remaining along the corridor, not straight-line distance to
 // the destination: a correct detour can initially move away from the goal.
 inline float remaining(Point me, const std::vector<Point>& path, size_t corner) {

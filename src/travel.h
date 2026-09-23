@@ -11,6 +11,7 @@ void open_menu();
 void open_map();
 void return_to_town();
 std::string status();
+std::string preview(); // read-only route plan for the reviewed target; never starts movement
 bool active();
 bool background_test(bool on); // dev only; requires GRIMDARK_NOFOCUS=1 at launch
 }

@@ -173,7 +173,10 @@ F1 -> Travel opens the travel menu. Ctrl+Shift+semicolon opens it directly.
   window, losing focus, pausing, dying, losing the target, harmful ground ahead, or getting stuck also stops
   it with a spoken reason. Travel never resumes by itself after being stopped.
 
-Walking uses the game's path corridor and ordinary movement commands. A destination that has no complete
+Walking uses the game's path corridor and ordinary movement commands. For a tracked object whose center is
+blocked, it also checks nearby standing points within 3.5 units. It uses only a complete route to a walkable,
+non-hazardous approach and stops there; press J yourself to interact or attack. It never breaks a wall for you.
+A destination that has no complete
 loaded route is refused rather than approached blindly. Closed doors, disconnected dungeon entrances and
 unloaded areas may require selecting an intermediate exit or interacting with a door, then choosing the
 destination again. Arrival at an entrance does not enter the dungeon: press J. This is an initial travel

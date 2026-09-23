@@ -55,12 +55,56 @@ bool manual() {
   for (int k : {0x11,0x1e,0x1f,0x20}) if (ks.held(k)) return true;
   return false;
 }
-bool plan(world::Vec3 me) {
+bool route_to(world::Vec3 destination, std::vector<path::Point>& out) {
   std::vector<world::Vec3> result;
-  if (!world::find_path_corridor(target.pos, result)) return false;
-  route.clear();
-  for (auto p : result) route.push_back(point(p));
-  if (!path::reaches(route, point(target.pos))) return false;
+  out.clear();
+  if (!world::find_path_corridor(destination, result)) return false;
+  for (auto p : result) out.push_back(point(p));
+  return path::reaches(out, point(destination));
+}
+bool safe_approach(const std::vector<path::Point>& candidate) {
+  size_t probes=0;
+  for (size_t i=0; i<candidate.size(); ++i) {
+    auto a = i ? candidate[i-1] : candidate[i];
+    const auto b = candidate[i];
+    const int steps = std::max(1, (int)std::ceil(path::distance(a,b)/0.5f));
+    for (int j=0; j<=steps; ++j) {
+      if (++probes>4096) return false;
+      const float t=(float)j/steps;
+      world::Vec3 sample{a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t};
+      world::Vec3 floor;
+      if (!world::navmesh_probe(sample,&floor) || !world::mesh_contains(floor) ||
+          world::hazard_at(floor,nullptr,nullptr)) return false;
+    }
+  }
+  return true;
+}
+bool build_route(const world::TravelTarget& goal, world::Vec3 me, std::vector<path::Point>& out, bool& approach) {
+  approach=false;
+  if (route_to(goal.pos,out)) return true;
+  out.clear();
+  if (!goal.id || goal.enemy) return false;
+  float best=std::numeric_limits<float>::infinity();
+  auto candidates=path::approach_points(point(goal.pos),point(me));
+  for (size_t i=0; i<candidates.size(); ++i) {
+    // Prefer the nearest radius that has a complete, safe route, then its shortest detour.
+    if (i%16==0 && !out.empty()) break;
+    world::Vec3 floor;
+    if (!world::navmesh_probe(vec(candidates[i]),&floor) || !world::mesh_contains(floor) ||
+        std::abs(floor.y-goal.pos.y)>=3 || world::hazard_at(floor,nullptr,nullptr)) continue;
+    std::vector<path::Point> trial;
+    if (!route_to(floor,trial) || !path::reaches_approach(trial,point(floor),point(goal.pos))) continue;
+    float length=path::remaining(point(me),trial,0);
+    if (length>=best || !safe_approach(trial)) continue;
+    best=length; out=std::move(trial);
+  }
+  approach=!out.empty();
+  return approach;
+}
+bool plan(world::Vec3 me) {
+  bool approach=false;
+  if (!build_route(target,me,route,approach)) return false;
+  if (approach) log::writef("travel: reachable approach to {} at ({:.2f},{:.2f},{:.2f}), {:.2f} from target",target.label,route.back().x,route.back().y,route.back().z,path::distance(route.back(),point(target.pos)));
   corner = 0;
   while (corner + 1 < route.size() && path::distance(point(me), route[corner]) < 0.9f) ++corner;
   progress.reset(app::now(), path::remaining(point(me), route, corner));
@@ -94,6 +138,15 @@ bool background_test(bool on) {
   test_background = on; return true;
 }
 std::string status() { return last_status + "\n" + std::format("active={} corners={} next={} target={}\n", active(), route.size(), corner, target.id); }
+std::string preview() {
+  world::TravelTarget goal; world::Vec3 me;
+  if (!world::player_position(me) || !world::reviewed_destination(goal)) return "No reviewed target\n";
+  std::vector<path::Point> result; bool approach=false;
+  bool ok=build_route(goal,me,result,approach);
+  std::string text=std::format("target={} '{}' found={} approach={} corners={}\n",goal.id,goal.label,ok,approach,result.size());
+  if (ok) text+=std::format("endpoint=({:.2f},{:.2f},{:.2f}) target_distance={:.2f} route_length={:.2f}\n",result.back().x,result.back().y,result.back().z,path::distance(result.back(),point(goal.pos)),path::remaining(point(me),result,0));
+  return text;
+}
 void stop(const std::string& reason) {
   bool walking = mode == Mode::Walking || mode == Mode::PortalMap;
   bool was_active = active() || map_request || quest_request;

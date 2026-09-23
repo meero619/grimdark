@@ -2,6 +2,18 @@
 #include "core/travel_path.h"
 #include <limits>
 using namespace gd::core::travel_path;
+TEST_CASE("Blocked-object approaches stay nearby and reject partial or wrong-floor endpoints") {
+  Point wall{-87.9f,-0.4f,-491.9f};
+  auto candidates=approach_points(wall,{-75.75f,0.68f,-512.5f});
+  REQUIRE_FALSE(candidates.empty());
+  for (auto p:candidates) { CHECK(finite(p)); CHECK(distance(p,wall)<=3.501f); }
+  CHECK(approach_points({std::numeric_limits<float>::infinity(),0,0},{}).empty());
+  CHECK(reaches_approach({{-75.75f,0.68f,-512.5f},{-91,-0.5f,-492}}, {-91,-0.5f,-492},wall));
+  CHECK_FALSE(reaches_approach({{-90,-0.5f,-492}}, {-91,-0.5f,-492},wall));
+  CHECK_FALSE(reaches_approach({{-91,8,-492}}, {-91,8,-492},wall));
+  CHECK_FALSE(reaches_approach({{-95,0,-492}}, {-95,0,-492},wall));
+  CHECK_FALSE(reaches_approach({},wall,wall));
+}
 TEST_CASE("Travel refuses missing, partial and wrong-floor routes") {
   CHECK_FALSE(reaches({}, {10,0,10}));
   CHECK_FALSE(reaches({{0,0,0},{3,0,3}}, {10,0,10}));
